@@ -253,7 +253,83 @@ STABLE_PARTNER_COLORS = {
     # consistent across the whole tab.
     "Actual":                   "#3b82f6",   # blue, solid (no area fill)
     "Counterfactual (Primary)": "#f59e0b",   # amber, dashed
+
+    # Additional non-ME, non-regional partners that show up in the top-N
+    # for the new dual-axis Singapore Trade Exposure chart (May 2026
+    # reviewer rework). Hues chosen to be distinguishable from the
+    # existing ME-spotlight + regional palette above.
+    "Bahrain":          "#fda4af",   # light pink-red (ME-family)
+    "United States":    "#0ea5e9",   # sky blue
+    "Brazil":           "#84cc16",   # lime-green (also Taiwan but Brazil rarely co-shown)
+    "Australia":        "#a16207",   # amber-brown
+    "Brunei":           "#d4a373",   # tan
+    "Russia":           "#9f1239",   # dark crimson
+    "United Kingdom":   "#6366f1",   # indigo
+    "Hong Kong":        "#475569",   # slate
+    "Israel":           "#7c3aed",   # violet
+    "Nigeria":          "#15803d",   # forest green
+    "South Sudan":      "#92400e",   # dark amber
+    "Angola":           "#b91c1c",   # dark red
+    "Papua New Guinea": "#525252",   # warm gray
+    "Affected ME Countries": "#dc2626",   # bright red — secondary-axis line on partner-share dual-axis chart
 }
+
+
+# Distinct per-country color map for the new partner-share dual-axis chart
+# (Singapore Trade Exposure tab, May 2026 reviewer rework). Unlike
+# STABLE_PARTNER_COLORS — which intentionally re-uses hues across sub-tabs
+# (Iraq=Malaysia, Brazil=Taiwan, India=Saudi Arabia) for cross-tab
+# visual cohesion — this map gives every country its OWN hue because
+# they all appear together on the same chart.
+PARTNER_SHARE_COLORS: dict[str, str] = {
+    # ME affected (red-family — visually consistent with the secondary-axis line)
+    "UAE":            "#60a5fa",   # blue
+    "Saudi Arabia":   "#f0d08a",   # gold
+    "Qatar":          "#10b981",   # emerald (distinct from China's blue)
+    "Kuwait":         "#be185d",   # deep rose — distinct from the "Affected ME" line red
+    "Iraq":           "#a78bfa",   # purple
+    "Bahrain":        "#fda4af",   # light pink
+    "Oman":           "#fb923c",   # orange (often non-affected here but ME-region — keep familiar hue)
+
+    # Major Asian partners
+    "China":          "#22d3ee",   # cyan
+    "Korea, Rep of":  "#06b6d4",   # darker cyan
+    "South Korea":    "#06b6d4",   # alias
+    "India":          "#fbbf24",   # amber/yellow
+    "Indonesia":      "#34d399",   # green-mint
+    "Japan":          "#f87171",   # red-coral
+    "Malaysia":       "#7c3aed",   # violet (distinct from Iraq purple)
+    "Philippines":    "#ec4899",   # pink
+    "Taiwan":         "#84cc16",   # lime
+    "Thailand":       "#f472b6",   # rose
+    "Vietnam":        "#14b8a6",   # teal
+    "Brunei":         "#d4a373",   # tan
+
+    # Other partners that appear in the top-N for various SITCs
+    "United States":  "#0ea5e9",   # sky blue
+    "Brazil":         "#65a30d",   # leaf green (distinct from Taiwan's lime)
+    "Russia":         "#9f1239",   # dark crimson
+    "Australia":      "#a16207",   # amber-brown
+    "United Kingdom": "#6366f1",   # indigo
+    "Hong Kong":      "#475569",   # slate
+    "Israel":         "#7c3aed",   # violet (won't co-show with Malaysia in practice)
+    "Nigeria":        "#15803d",   # forest green
+    "Mozambique":     "#1e40af",   # navy
+    "Peru":           "#ea580c",   # orange-red
+    "Guinea":         "#86efac",   # mint
+    "South Africa":   "#854d0e",   # dark amber
+    "South Sudan":    "#92400e",   # dark amber 2
+    "Angola":         "#b91c1c",   # dark red
+    "Papua New Guinea": "#525252", # warm gray
+    "Others":         "#6b7280",   # neutral gray (always the residual)
+}
+
+# Fallback palette for any country not in PARTNER_SHARE_COLORS — distinct
+# from anything in the map above so collisions are easy to spot.
+PARTNER_SHARE_FALLBACK_PALETTE: list[str] = [
+    "#0891b2", "#a855f7", "#facc15", "#f97316", "#22c55e", "#e11d48",
+    "#3b82f6", "#84cc16", "#f43f5e", "#10b981", "#8b5cf6", "#eab308",
+]
 
 
 def _color_for_series(series: dict, idx: int) -> str:
@@ -522,8 +598,8 @@ def build_chart_config(title: str, series_list: list[dict],
             "type": "time",
             "time": (
                 {"unit": "quarter",
-                 "displayFormats": {"quarter": "QQQ yyyy"},
-                 "tooltipFormat": "QQQ yyyy"}
+                 "displayFormats": {"quarter": "yyyy'Q'q"},
+                 "tooltipFormat": "yyyy'Q'q"}
                 if all_quarterly
                 else {"unit": "month", "tooltipFormat": "MMM d, yyyy"}
             ),
@@ -615,6 +691,11 @@ def build_chart_config(title: str, series_list: list[dict],
                     }} if common_unit else {}),
                     "beginAtZero": True if use_category else False,
                     **({"stacked": True} if stacked else {}),
+                    # Cap stacked-share charts at 100% so the auto-scale
+                    # doesn't extend the axis to 120 / 140 (the data
+                    # logically maxes at 100, and a 120-tick top wastes
+                    # vertical space).
+                    **({"max": 100} if stacked and common_unit == "% share" else {}),
                 },
             },
         },
@@ -1432,6 +1513,16 @@ def render_tab_group(section: dict, conn, chart_state: dict, data_sources_state:
                 sub_inner += render_country_share_comparison(sub, conn, chart_state, data_sources_state,
                                                               tab_slug=tab["slug"], page_prefix=page_prefix,
                                                               default_relevance=tab_relevance)
+            elif t == "intro_text":
+                sub_inner += render_intro_text(sub)
+            elif t == "partner_share_dual_axis":
+                sub_inner += render_partner_share_dual_axis(sub, conn, chart_state, data_sources_state,
+                                                             tab_slug=tab["slug"], page_prefix=page_prefix,
+                                                             default_relevance=tab_relevance)
+            elif t == "partner_share_grid":
+                sub_inner += render_partner_share_grid(sub, conn, chart_state, data_sources_state,
+                                                       tab_slug=tab["slug"], page_prefix=page_prefix,
+                                                       default_relevance=tab_relevance)
             elif t == "view_selector":
                 sub_inner += render_view_selector(sub, conn, chart_state, data_sources_state,
                                                    tab_slug=tab["slug"], page_prefix=page_prefix,
@@ -1538,6 +1629,11 @@ def render_view_selector(
                                                           tab_slug=tab_slug, page_prefix=page_prefix,
                                                           panel_slug=view_panel_slug,
                                                           default_relevance=default_relevance)
+            elif t == "partner_share_dual_axis":
+                inner += render_partner_share_dual_axis(sub, conn, chart_state, data_sources_state,
+                                                         tab_slug=tab_slug, page_prefix=page_prefix,
+                                                         panel_slug=view_panel_slug,
+                                                         default_relevance=default_relevance)
             elif t == "placeholder":
                 inner += render_placeholder(sub)
         style = "" if active else ' style="display: none;"'
@@ -1700,6 +1796,389 @@ def render_country_share_comparison(
     </section>'''
 
 
+def render_partner_share_dual_axis(
+    section: dict, conn, chart_state: dict, data_sources_state: dict,
+    tab_slug: str | None = None,
+    page_prefix: str = "x",
+    panel_slug: str = "",
+    default_relevance: list[str] | None = None,
+    *,
+    as_card: bool = False,
+) -> str:
+    """Render a single dual-axis chart for one SITC's import partner-share
+    evolution. Reviewer rework, May 2026.
+
+    Layout per chart:
+      x-axis    — category, mixed annual + monthly + computed avg ticks
+                  (auto-rolls as new monthly data arrives):
+                  ['2023', '2024', '2025', 'Jan 2026', 'Feb 2026',
+                   'Jan-Feb Avg', 'Mar 2026', ('Apr 2026'…)]
+      left y    — Market Share (%), 0–100, stacked bars per partner +
+                  'Others' residual
+      right y   — Affected ME Countries Share (%), 0–100, red line
+                  (sum of 6 affected ME countries)
+
+    Section schema (page_layouts.py):
+      type: "partner_share_dual_axis"
+      title:        h2 above the chart
+      description:  paragraph beneath title
+      sitc_code:    e.g. "SITC_333" — drives the underlying series IDs
+                    `sg_imp_pshare_<sitc_lower>_<iso2>` and the
+                    `_others` / `_me_affected` aggregates
+      sitc_label:   short label for tooltips/legend (optional, falls back
+                    to sitc_code)
+
+    Stable per-partner colors come from STABLE_PARTNER_COLORS keyed on
+    the country display name (UAE, Qatar, etc.).
+    """
+    from datetime import datetime
+
+    title       = section.get("title", "")
+    desc        = section.get("description", "")
+    sitc_code   = section["sitc_code"]
+    sitc_label  = section.get("sitc_label", sitc_code)
+    sitc_low    = sitc_code.lower()
+
+    # ── Step 1: pull the available partner ISO list from the precomputed
+    # series, ordered by 2025 annual share descending. (Excludes _others
+    # and _me_affected — those get their own datasets at the end.)
+    # SQL `_` is a single-char wildcard, so we MUST escape every `_` in
+    # the prefix — otherwise `sg_imp_pshare_sitc_3_%` also matches
+    # `sg_imp_pshare_sitc_333_*` and `sg_imp_pshare_sitc_3346043_*`,
+    # which would mix series across SITCs and blow up dataset counts.
+    prefix_escaped  = f"sg_imp_pshare_{sitc_low}_".replace("_", r"\_")
+    partner_pattern = prefix_escaped + "%"
+    rows = conn.execute(
+        "SELECT DISTINCT series_id FROM time_series "
+        "WHERE series_id LIKE ?                         ESCAPE '\\' "
+        "  AND series_id NOT LIKE ?                     ESCAPE '\\' "
+        "  AND series_id NOT LIKE ?                     ESCAPE '\\' ",
+        (partner_pattern, prefix_escaped + r"others", prefix_escaped + r"me\_affected"),
+    ).fetchall()
+    iso_list = [r[0].rsplit("_", 1)[-1].upper() for r in rows]
+    # Order by 2025 share DESC
+    iso_with_share: list[tuple[str, float]] = []
+    for iso2 in iso_list:
+        sid = f"sg_imp_pshare_{sitc_low}_{iso2.lower()}"
+        v = conn.execute(
+            "SELECT value FROM time_series WHERE series_id=? AND date='2025-12-31'",
+            (sid,),
+        ).fetchone()
+        iso_with_share.append((iso2, float(v[0]) if v and v[0] is not None else 0.0))
+    iso_with_share.sort(key=lambda t: -t[1])
+    ordered_iso2 = [t[0] for t in iso_with_share]
+
+    # ── Step 2: build the period axis. Annual fixed (2023, 2024, 2025) +
+    # all monthly periods we have from 2026-01 onward. Auto-rolls as new
+    # months arrive. Inject a 'Jan-Feb Avg' tick after Feb but before the
+    # first post-war month.
+    annual_periods = ["2023-12-31", "2024-12-31", "2025-12-31"]
+    annual_labels  = ["2023", "2024", "2025"]
+    monthly_periods = [
+        r[0] for r in conn.execute(
+            "SELECT DISTINCT date FROM time_series "
+            "WHERE series_id = ? AND date >= '2026-01-01' "
+            "ORDER BY date",
+            (f"sg_imp_pshare_{sitc_low}_others",),
+        ).fetchall()
+    ]
+    monthly_labels = [
+        datetime.strptime(p, "%Y-%m-%d").strftime("%b %Y") for p in monthly_periods
+    ]
+
+    # Pre-war reference window = first 2 monthly periods (typically Jan + Feb 2026).
+    has_avg = len(monthly_periods) >= 3   # only show avg when we have ≥1 post-war month
+    final_labels: list[str]   = list(annual_labels)
+    period_meta: list[dict] = [
+        {"kind": "annual", "period": ap} for ap in annual_periods
+    ]
+    if has_avg:
+        # Annual + first 2 monthly + avg + remaining monthly (Mar onwards)
+        final_labels.extend(monthly_labels[:2])
+        period_meta.extend([{"kind": "monthly", "period": p} for p in monthly_periods[:2]])
+        final_labels.append(f"{monthly_labels[0].split()[0]}-{monthly_labels[1].split()[0]} Avg")
+        period_meta.append({"kind": "avg", "avg_of": monthly_periods[:2]})
+        final_labels.extend(monthly_labels[2:])
+        period_meta.extend([{"kind": "monthly", "period": p} for p in monthly_periods[2:]])
+    else:
+        # Not enough post-war data yet — no avg tick
+        final_labels.extend(monthly_labels)
+        period_meta.extend([{"kind": "monthly", "period": p} for p in monthly_periods])
+
+    def _value_for(series_id: str, meta: dict) -> float | None:
+        if meta["kind"] in ("annual", "monthly"):
+            row = conn.execute(
+                "SELECT value FROM time_series WHERE series_id=? AND date=?",
+                (series_id, meta["period"]),
+            ).fetchone()
+            return float(row[0]) if row and row[0] is not None else None
+        # 'avg' — compute mean of the listed monthly periods
+        vals: list[float] = []
+        for p in meta["avg_of"]:
+            row = conn.execute(
+                "SELECT value FROM time_series WHERE series_id=? AND date=?",
+                (series_id, p),
+            ).fetchone()
+            if row and row[0] is not None:
+                vals.append(float(row[0]))
+        return sum(vals) / len(vals) if vals else None
+
+    # ── Step 3: per-partner stacked datasets. Pull display name + color
+    # from country_mapping + STABLE_PARTNER_COLORS.
+    iso_to_display: dict[str, str] = {}
+    for iso2 in ordered_iso2:
+        # Try to find display name from trade_singstat (most reliable)
+        row = conn.execute(
+            "SELECT partner_display FROM trade_singstat "
+            "WHERE partner_iso2=? AND partner_display IS NOT NULL LIMIT 1",
+            (iso2,),
+        ).fetchone()
+        iso_to_display[iso2] = (row[0] if row and row[0] else iso2)
+
+    datasets: list[dict] = []
+    for idx, iso2 in enumerate(ordered_iso2):
+        display = iso_to_display.get(iso2, iso2)
+        # Use the dedicated PARTNER_SHARE_COLORS map for distinct hues
+        # within this chart (STABLE_PARTNER_COLORS re-uses hues across
+        # other tabs which would collide here).
+        color = PARTNER_SHARE_COLORS.get(
+            display,
+            PARTNER_SHARE_FALLBACK_PALETTE[idx % len(PARTNER_SHARE_FALLBACK_PALETTE)],
+        )
+        sid = f"sg_imp_pshare_{sitc_low}_{iso2.lower()}"
+        data_arr = [_value_for(sid, m) for m in period_meta]
+        datasets.append({
+            "label":           display,
+            "data":            data_arr,
+            "backgroundColor": color,
+            "borderColor":     color,
+            "borderWidth":     0,
+            "stack":           "shares",
+            "order":           2,    # bars below the line (higher order = drawn first)
+        })
+
+    # 'Others' residual on the bar stack
+    others_sid = f"sg_imp_pshare_{sitc_low}_others"
+    datasets.append({
+        "label":           "Others",
+        "data":            [_value_for(others_sid, m) for m in period_meta],
+        "backgroundColor": PARTNER_SHARE_COLORS["Others"],
+        "borderColor":     PARTNER_SHARE_COLORS["Others"],
+        "borderWidth":     0,
+        "stack":           "shares",
+        "order":           2,
+    })
+
+    # ── Step 4: ME-affected aggregate as a line on the right axis.
+    # `order: 0` ensures the line is drawn LAST → on top of all bars.
+    me_sid = f"sg_imp_pshare_{sitc_low}_me_affected"
+    me_line_color = "#dc2626"   # bright red — distinct from Kuwait's per-bar color
+    datasets.append({
+        "type":               "line",
+        "label":              "Affected ME Countries Share",
+        "data":               [_value_for(me_sid, m) for m in period_meta],
+        "borderColor":        me_line_color,
+        "backgroundColor":    me_line_color,
+        "borderWidth":        2.5,
+        "pointRadius":        4,
+        "pointHoverRadius":   6,
+        "pointBackgroundColor": me_line_color,
+        "yAxisID":            "y1",
+        "fill":               False,
+        "tension":            0,
+        "order":              0,   # lowest order → drawn LAST → on top of bars
+    })
+
+    # ── Step 5: build chart config
+    chart_id = make_chart_id(
+        page_prefix, tab_slug or "",
+        section.get("slug") or f"partner_share_{sitc_low}",
+        chart_state, panel_slug=panel_slug,
+    )
+    chart_state[chart_id] = {
+        "type": "bar",
+        "data": {"labels": final_labels, "datasets": datasets},
+        "options": {
+            "responsive": True,
+            "maintainAspectRatio": False,
+            "interaction": {"mode": "index", "intersect": False},
+            "plugins": {
+                "legend": {
+                    "position": "right",
+                    "align":    "start",
+                    "labels":   {"color": "#c9d4e3", "boxWidth": 14,
+                                 "padding": 8, "font": {"size": 10}},
+                },
+                "title":   {"display": False, "text": title},
+                "tooltip": {"callbacks": {}},
+            },
+            "scales": {
+                "x": {
+                    "stacked": True,
+                    "ticks":   {"color": "rgba(224, 230, 239, 0.65)",
+                                "font": {"size": 10}, "maxRotation": 30},
+                    "grid":    {"color": "rgba(224, 230, 239, 0.04)"},
+                },
+                "y": {
+                    "stacked":     True,
+                    "beginAtZero": True,
+                    "max":         100,
+                    "title":       {"display": True, "text": "Market Share (%)",
+                                    "color": "#9ca3af", "font": {"size": 11}},
+                    "ticks":       {"color": "rgba(224, 230, 239, 0.5)",
+                                    "font": {"size": 10}, "stepSize": 20},
+                    "grid":        {"color": "rgba(224, 230, 239, 0.06)"},
+                },
+                "y1": {
+                    "type":        "linear",
+                    "position":    "right",
+                    "beginAtZero": True,
+                    "max":         100,
+                    "title":       {"display": True,
+                                    "text": "Affected ME Countries Share (%)",
+                                    "color": "#dc2626",
+                                    "font": {"size": 11}},
+                    "ticks":       {"color": "#dc2626",
+                                    "font": {"size": 10}, "stepSize": 20},
+                    "grid":        {"display": False},
+                },
+            },
+        },
+    }
+
+    # ── Step 6: register a Sources entry (for the page-bottom Data Sources
+    # table). Pull metadata off the underlying series.
+    src_row = conn.execute(
+        "SELECT source, frequency, unit FROM time_series "
+        "WHERE series_id=? LIMIT 1",
+        (others_sid,),
+    ).fetchone()
+    src   = src_row[0] if src_row else "singstat"
+    freq  = "Annual + Monthly"
+    unit  = src_row[2] if src_row else "% share"
+
+    src_series_list = []
+    for iso2 in ordered_iso2:
+        sid = f"sg_imp_pshare_{sitc_low}_{iso2.lower()}"
+        src_series_list.append({
+            "series_id":     sid,
+            "series_name":   f"SG {sitc_label} imports — share from {iso_to_display.get(iso2, iso2)}",
+            "source":        src,
+            "frequency":     freq,
+            "unit":          unit,
+            "friendly_name": iso_to_display.get(iso2, iso2),
+            "data":          [],
+        })
+    src_series_list.append({
+        "series_id":     others_sid,
+        "series_name":   f"SG {sitc_label} imports — share from non-shown partners",
+        "source":        src,
+        "frequency":     freq,
+        "unit":          unit,
+        "friendly_name": "Others",
+        "data":          [],
+    })
+    src_series_list.append({
+        "series_id":     me_sid,
+        "series_name":   f"SG {sitc_label} imports — share from 6 affected ME countries (UAE, Saudi, Qatar, Iraq, Kuwait, Bahrain)",
+        "source":        src,
+        "frequency":     freq,
+        "unit":          unit,
+        "friendly_name": "Affected ME Countries",
+        "data":          [],
+    })
+    data_sources_state[chart_id] = {
+        "title":        title,
+        "description":  desc or "",
+        "series":       src_series_list,
+        "tab_slug":     tab_slug,
+        "page_prefix":  page_prefix,
+        "relevant_to":  list(section.get("relevant_to") or default_relevance or []),
+    }
+
+    # ── Step 7: emit the HTML wrapper
+    badge = (
+        f'<a class="chart-id-badge" href="#{chart_id}" data-chart-id="{chart_id}" '
+        f'title="Click to copy link to this chart">⌗ {chart_id}</a>'
+    )
+    if as_card:
+        # Card-only mode — used inside `partner_share_grid` parent section.
+        # The outer grid renders a single shared section header for all
+        # cards; each card here gets its own short title + factual caption.
+        card_title_html = f'<div class="chart-card-title">{html.escape(title)}</div>' if title else ""
+        card_desc_html  = f'<p class="chart-card-desc">{html.escape(desc)}</p>'  if desc else ""
+        return f'''
+        <div class="chart-card" id="card-{chart_id}">
+          {card_title_html}
+          {card_desc_html}
+          <div class="chart-container" style="height: 420px;"><canvas id="{chart_id}"></canvas></div>
+          <div class="chart-id-footer">{badge}</div>
+        </div>'''
+
+    # Standalone mode — full section wrapper with title + description.
+    desc_html = f'<p class="section-desc">{html.escape(desc)}</p>' if desc else ""
+    return f'''
+    <section class="page-section">
+      <div class="section-header">
+        <h2>{html.escape(title)}</h2>
+        {desc_html}
+      </div>
+      <div class="chart-grid chart-grid-single" style="grid-template-columns: 1fr;">
+        <div class="chart-card" id="card-{chart_id}">
+          <div class="chart-container" style="height: 420px;"><canvas id="{chart_id}"></canvas></div>
+          <div class="chart-id-footer">{badge}</div>
+        </div>
+      </div>
+    </section>'''
+
+
+def render_partner_share_grid(
+    section: dict, conn, chart_state: dict, data_sources_state: dict,
+    tab_slug: str | None = None,
+    page_prefix: str = "x",
+    panel_slug: str = "",
+    default_relevance: list[str] | None = None,
+) -> str:
+    """Wrapper section that renders N partner-share dual-axis charts as
+    cards under one shared section title + description. Used to group
+    the 6 SITC charts on the Singapore Trade Exposure tab under one
+    "Mineral fuel imports" header (mirrors the original layout's
+    chart_grid + nodes pattern).
+
+    Section schema:
+      type:        "partner_share_grid"
+      title:       section h2
+      description: section paragraph (one-time, applies to all cards)
+      cards:       list of card dicts, each forwarded to
+                   render_partner_share_dual_axis(as_card=True). Each
+                   card dict has its own `title`, `description`,
+                   `sitc_code`, `sitc_label`, `slug`.
+    """
+    title = section.get("title", "")
+    desc  = section.get("description", "")
+    cards = section.get("cards", [])
+    cards_html = ""
+    for card_section in cards:
+        cards_html += render_partner_share_dual_axis(
+            card_section, conn, chart_state, data_sources_state,
+            tab_slug=tab_slug, page_prefix=page_prefix,
+            panel_slug=panel_slug,
+            default_relevance=section.get("relevant_to") or default_relevance,
+            as_card=True,
+        )
+    desc_html = f'<p class="section-desc">{html.escape(desc)}</p>' if desc else ""
+    return f'''
+    <section class="page-section">
+      <div class="section-header">
+        <h2>{html.escape(title)}</h2>
+        {desc_html}
+      </div>
+      <div class="chart-grid chart-grid-single" style="grid-template-columns: 1fr;">
+        {cards_html}
+      </div>
+    </section>'''
+
+
 def render_country_panels(section: dict, conn, chart_state: dict,
                           data_sources_state: dict, tab_slug: str | None = None,
                           page_prefix: str = "x",
@@ -1788,6 +2267,23 @@ def render_placeholder(section: dict) -> str:
         <h2>{title}</h2>
         <p class="placeholder-intro">Planned content for this section:</p>
         <ul class="planned-content">{items_html}</ul>
+      </div>
+    </section>'''
+
+
+def render_intro_text(section: dict) -> str:
+    """Minimal section — just a heading (optional) + a paragraph. Used at
+    the top of a tab to introduce a series of charts (e.g. Singapore Trade
+    Exposure tab opens with a paragraph defining the 6 affected ME
+    countries before the 6 SITC charts that follow)."""
+    title = section.get("title", "")
+    body  = section.get("body", "")  # may contain inline HTML (<strong>, etc.)
+    title_html = f'<h2>{html.escape(title)}</h2>' if title else ""
+    return f'''
+    <section class="page-section page-section--intro">
+      <div class="section-header">
+        {title_html}
+        <p class="section-desc">{body}</p>
       </div>
     </section>'''
 
@@ -1935,8 +2431,45 @@ def render_status_indicators(section: dict, conn) -> str:
         level = (block.get("level") or "").lower()
         meta = _STATUS_LEVELS.get(level, {"label": level.title() or "—",
                                            "color": "#6b7280"})
-        narrative = block.get("narrative") or ""
-        drivers   = block.get("drivers")   or []
+        # New structured-narrative shape (post-2026-05-04 prompt rev): both
+        # energy_supply and financial_markets emit `narrative_sections` —
+        # an ordered list of {label, body}. Rendered as a bulleted list with
+        # the label in bold inline.
+        # Backwards-compat: an interim shape used `narrative_bullets` (list
+        # of strings, no labels); we still render those if present. Older
+        # cached payloads with a single `narrative` string fall through to
+        # a plain paragraph.
+        narrative_sections = block.get("narrative_sections") or []
+        narrative_bullets  = block.get("narrative_bullets")  or []
+        narrative          = block.get("narrative")          or ""
+        drivers            = block.get("drivers")            or []
+
+        if narrative_sections and isinstance(narrative_sections, list):
+            items_html = ""
+            for s in narrative_sections:
+                if not isinstance(s, dict):
+                    continue
+                lbl = html.escape(s.get("label", "") or "")
+                body = html.escape(s.get("body", "") or "")
+                if not lbl and not body:
+                    continue
+                if lbl:
+                    items_html += (
+                        f'<li><strong class="status-section-label">{lbl}:</strong> '
+                        f'<span class="status-section-body">{body}</span></li>'
+                    )
+                else:
+                    items_html += f'<li>{body}</li>'
+            narrative_html = f'<ul class="status-sections">{items_html}</ul>'
+        elif narrative_bullets and isinstance(narrative_bullets, list):
+            # Interim shape — bullet list without labels.
+            bullets_html = "".join(
+                f'<li>{html.escape(b)}</li>' for b in narrative_bullets if b
+            )
+            narrative_html = f'<ul class="status-sections">{bullets_html}</ul>'
+        else:
+            # Older cached payloads with a single string.
+            narrative_html = f'<p class="status-narrative">{html.escape(narrative)}</p>'
 
         # Drivers — each is `{text, chart_ids}`. Render as a bullet with the
         # text and inline chart-id badges that cross-navigate to the chart's
@@ -2000,7 +2533,7 @@ def render_status_indicators(section: dict, conn) -> str:
             {steps_html}
           </div>
           <div class="status-section-title">Overview</div>
-          <p class="status-narrative">{html.escape(narrative)}</p>
+          {narrative_html}
           {drivers_block}
         </div>'''
 
@@ -2552,6 +3085,17 @@ BASE_TEMPLATE = '''<!DOCTYPE html>
     .card-header {{ margin-bottom: 0.75rem; }}
     .card-header h3 {{ margin: 0 0 0.25rem; font-size: 0.98rem; color: var(--accent); font-weight: 600; }}
     .card-desc {{ margin: 0; font-size: 0.83rem; color: var(--text-muted); line-height: 1.5; max-width: 64ch; }}
+    /* Inline card title + description used by partner_share_grid cards.
+       Slightly smaller than .card-header h3 since these sit one nesting
+       level deeper (parent section already has its own h2). */
+    .chart-card-title {{
+      margin: 0 0 0.4rem; font-size: 0.95rem; color: var(--accent);
+      font-weight: 600;
+    }}
+    .chart-card-desc {{
+      margin: 0 0 0.75rem; font-size: 0.82rem; color: var(--text-muted);
+      line-height: 1.5; max-width: 64ch;
+    }}
 
     /* Visible chart-ID badge — surfaces the deterministic chart ID (e.g.
        ⌗ sg.activity.petroleum_refining) so the LLM narrative system can
@@ -2655,6 +3199,27 @@ BASE_TEMPLATE = '''<!DOCTYPE html>
       font-size: 0.93rem;
       text-align: justify;
       hyphens: auto;
+    }}
+    /* Labelled-bullets narrative — used for both energy_supply (3-section
+       upstream/physical/passthrough structure) and financial_markets
+       (Credit / IR / FX / Liquidity / Overall). Same visual on both cards. */
+    .status-sections {{
+      list-style: disc;
+      padding-left: 1.2rem;
+      margin: 0.4rem 0 0.9rem;
+      color: var(--text);
+      font-size: 0.93rem;
+      line-height: 1.55;
+    }}
+    .status-sections li {{
+      margin: 0.4rem 0;
+    }}
+    .status-section-label {{
+      font-weight: 600;
+      color: #e0e6ef;
+    }}
+    .status-section-body {{
+      color: var(--text);
     }}
 
     /* Stepper-pill scale showing all 4 levels with the current one
@@ -3808,6 +4373,21 @@ BASE_TEMPLATE = '''<!DOCTYPE html>
       Object.entries(CHART_CONFIGS).forEach(([id, cfg]) => {{
         const el = document.getElementById(id);
         if (!el) return;
+        // Tooltip precision: % share charts → 1 d.p. + '%' suffix.
+        // Detected from y-axis title text (set from the underlying series unit).
+        const yTitle = (cfg.options && cfg.options.scales && cfg.options.scales.y &&
+                        cfg.options.scales.y.title && cfg.options.scales.y.title.text) || '';
+        if (yTitle === '% share') {{
+          cfg.options = cfg.options || {{}};
+          cfg.options.plugins = cfg.options.plugins || {{}};
+          cfg.options.plugins.tooltip = cfg.options.plugins.tooltip || {{}};
+          cfg.options.plugins.tooltip.callbacks = cfg.options.plugins.tooltip.callbacks || {{}};
+          cfg.options.plugins.tooltip.callbacks.label = function(context) {{
+            const lbl = context.dataset.label || '';
+            const v = context.parsed && context.parsed.y;
+            return lbl + ': ' + (v == null ? '—' : v.toFixed(1) + '%');
+          }};
+        }}
         try {{
           window._chartInstances[id] = new Chart(el, cfg);
         }} catch (e) {{

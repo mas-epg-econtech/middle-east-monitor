@@ -580,6 +580,21 @@ SERIES_DESCRIPTIONS: dict[str, dict[str, str]] = {
     "regional_ipi_th": {"name": "Thailand",    "desc": "Thailand industrial production index, year-on-year (CEIC computation from OIE)."},
     "regional_ipi_vn": {"name": "Vietnam",     "desc": "Vietnam industrial production index, year-on-year (GSO calculation)."},
 
+    # ── Index-rebased (2025=100) — derived from regional_ipi_level_<iso2>
+    # via compute_regional_ipi_index_levels(). Used by Regional Sectoral
+    # Activity → Industrial Production tab so all 10 countries share the
+    # same scale and align visually with Singapore Sectoral IPI.
+    "regional_ipi_index_cn": {"name": "China",       "desc": "China Value Added of Industry (NBS)."},
+    "regional_ipi_index_in": {"name": "India",       "desc": "India industrial production index (MoSPI)."},
+    "regional_ipi_index_id": {"name": "Indonesia",   "desc": "Indonesia industrial production index (BPS). Publishes ~3 months in arrears."},
+    "regional_ipi_index_jp": {"name": "Japan",       "desc": "Japan mining & manufacturing IPI (METI)."},
+    "regional_ipi_index_my": {"name": "Malaysia",    "desc": "Malaysia industrial production index (DOSM)."},
+    "regional_ipi_index_ph": {"name": "Philippines", "desc": "Philippines IPI volume (PSA)."},
+    "regional_ipi_index_kr": {"name": "South Korea", "desc": "South Korea all-industry production index."},
+    "regional_ipi_index_tw": {"name": "Taiwan",      "desc": "Taiwan industrial production index (MOEA)."},
+    "regional_ipi_index_th": {"name": "Thailand",    "desc": "Thailand value-added production index (OIE)."},
+    "regional_ipi_index_vn": {"name": "Vietnam",     "desc": "Vietnam industrial production index (GSO)."},
+
     # ════════════════════════════════════════════════════════════════════
     # REGIONAL — Chemical imports from SG (derived from trade_singstat)
     # Two series_ids per country — annual (2023-2025) and monthly (from
@@ -612,6 +627,60 @@ SERIES_DESCRIPTIONS: dict[str, dict[str, str]] = {
     "singstat_chem_export_monthly_vn": {"name": "Vietnam",     "desc": "Vietnam's monthly imports of chemicals (excl. organics & pharma) from Singapore (SGD thousands), 2026, from SingStat."},
     # Non-regional residual on the monthly stacked-levels chart.
     "sg_chem_export_monthly_others":   {"name": "Others",      "desc": "Monthly SG industrial-chemical exports to non-regional destinations (mainly US/EU). Total minus the 10 regional countries' sum."},
+    # Non-regional residual on the annual stacked-shares chart (lets bars sum to 100%).
+    "sg_chem_export_share_others":     {"name": "Others",      "desc": "Annual SG industrial-chemical export share to non-regional destinations (mainly US/EU). 100 − sum of the 10 regional countries' shares."},
+
+    # ── SG total oil exports (SITC 3) — per-country monthly levels ─────
+    "singstat_totaloil_export_monthly_cn": {"name": "China",       "desc": "China's monthly imports of mineral fuels (SITC 3) from Singapore (SGD thousands), 2026, from SingStat. New months added as published."},
+    "singstat_totaloil_export_monthly_in": {"name": "India",       "desc": "India's monthly imports of mineral fuels (SITC 3) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_totaloil_export_monthly_id": {"name": "Indonesia",   "desc": "Indonesia's monthly imports of mineral fuels (SITC 3) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_totaloil_export_monthly_jp": {"name": "Japan",       "desc": "Japan's monthly imports of mineral fuels (SITC 3) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_totaloil_export_monthly_my": {"name": "Malaysia",    "desc": "Malaysia's monthly imports of mineral fuels (SITC 3) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_totaloil_export_monthly_ph": {"name": "Philippines", "desc": "Philippines' monthly imports of mineral fuels (SITC 3) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_totaloil_export_monthly_kr": {"name": "South Korea", "desc": "South Korea's monthly imports of mineral fuels (SITC 3) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_totaloil_export_monthly_tw": {"name": "Taiwan",      "desc": "Taiwan's monthly imports of mineral fuels (SITC 3) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_totaloil_export_monthly_th": {"name": "Thailand",    "desc": "Thailand's monthly imports of mineral fuels (SITC 3) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_totaloil_export_monthly_vn": {"name": "Vietnam",     "desc": "Vietnam's monthly imports of mineral fuels (SITC 3) from Singapore (SGD thousands), 2026, from SingStat."},
+    "sg_totaloil_export_monthly_others":   {"name": "Others",      "desc": "Monthly SG total-oil (SITC 3) exports to non-regional destinations (mainly US/EU). Total minus the 10 regional countries' sum."},
+
+    # ── SG total oil export shares (SITC 3) — annual shares ───────────
+    "sg_totaloil_export_share_cn": {"name": "China",       "desc": "China's share of SG total oil exports (SITC 3)."},
+    "sg_totaloil_export_share_in": {"name": "India",       "desc": "India's share of SG total oil exports (SITC 3)."},
+    "sg_totaloil_export_share_id": {"name": "Indonesia",   "desc": "Indonesia's share of SG total oil exports (SITC 3)."},
+    "sg_totaloil_export_share_jp": {"name": "Japan",       "desc": "Japan's share of SG total oil exports (SITC 3)."},
+    "sg_totaloil_export_share_my": {"name": "Malaysia",    "desc": "Malaysia's share of SG total oil exports (SITC 3)."},
+    "sg_totaloil_export_share_ph": {"name": "Philippines", "desc": "Philippines' share of SG total oil exports (SITC 3)."},
+    "sg_totaloil_export_share_kr": {"name": "South Korea", "desc": "South Korea's share of SG total oil exports (SITC 3)."},
+    "sg_totaloil_export_share_tw": {"name": "Taiwan",      "desc": "Taiwan's share of SG total oil exports (SITC 3)."},
+    "sg_totaloil_export_share_th": {"name": "Thailand",    "desc": "Thailand's share of SG total oil exports (SITC 3)."},
+    "sg_totaloil_export_share_vn": {"name": "Vietnam",     "desc": "Vietnam's share of SG total oil exports (SITC 3)."},
+    "sg_totaloil_export_share_others": {"name": "Others",  "desc": "Annual SG total-oil (SITC 3) export share to non-regional destinations (mainly US/EU). 100 − sum of the 10 regional countries' shares."},
+
+    # ── SG refined petroleum exports (SITC 334) — per-country monthly levels ─
+    "singstat_petroleum_export_monthly_cn": {"name": "China",       "desc": "China's monthly imports of refined petroleum (SITC 334) from Singapore (SGD thousands), 2026, from SingStat. New months added as published."},
+    "singstat_petroleum_export_monthly_in": {"name": "India",       "desc": "India's monthly imports of refined petroleum (SITC 334) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_petroleum_export_monthly_id": {"name": "Indonesia",   "desc": "Indonesia's monthly imports of refined petroleum (SITC 334) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_petroleum_export_monthly_jp": {"name": "Japan",       "desc": "Japan's monthly imports of refined petroleum (SITC 334) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_petroleum_export_monthly_my": {"name": "Malaysia",    "desc": "Malaysia's monthly imports of refined petroleum (SITC 334) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_petroleum_export_monthly_ph": {"name": "Philippines", "desc": "Philippines' monthly imports of refined petroleum (SITC 334) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_petroleum_export_monthly_kr": {"name": "South Korea", "desc": "South Korea's monthly imports of refined petroleum (SITC 334) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_petroleum_export_monthly_tw": {"name": "Taiwan",      "desc": "Taiwan's monthly imports of refined petroleum (SITC 334) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_petroleum_export_monthly_th": {"name": "Thailand",    "desc": "Thailand's monthly imports of refined petroleum (SITC 334) from Singapore (SGD thousands), 2026, from SingStat."},
+    "singstat_petroleum_export_monthly_vn": {"name": "Vietnam",     "desc": "Vietnam's monthly imports of refined petroleum (SITC 334) from Singapore (SGD thousands), 2026, from SingStat."},
+    "sg_petroleum_export_monthly_others":   {"name": "Others",      "desc": "Monthly SG refined-petroleum (SITC 334) exports to non-regional destinations (mainly US/EU). Total minus the 10 regional countries' sum."},
+
+    # ── SG refined petroleum export shares (SITC 334) — annual shares ──
+    "sg_petroleum_export_share_cn": {"name": "China",       "desc": "China's share of SG refined-petroleum exports (SITC 334)."},
+    "sg_petroleum_export_share_in": {"name": "India",       "desc": "India's share of SG refined-petroleum exports (SITC 334)."},
+    "sg_petroleum_export_share_id": {"name": "Indonesia",   "desc": "Indonesia's share of SG refined-petroleum exports (SITC 334)."},
+    "sg_petroleum_export_share_jp": {"name": "Japan",       "desc": "Japan's share of SG refined-petroleum exports (SITC 334)."},
+    "sg_petroleum_export_share_my": {"name": "Malaysia",    "desc": "Malaysia's share of SG refined-petroleum exports (SITC 334)."},
+    "sg_petroleum_export_share_ph": {"name": "Philippines", "desc": "Philippines' share of SG refined-petroleum exports (SITC 334)."},
+    "sg_petroleum_export_share_kr": {"name": "South Korea", "desc": "South Korea's share of SG refined-petroleum exports (SITC 334)."},
+    "sg_petroleum_export_share_tw": {"name": "Taiwan",      "desc": "Taiwan's share of SG refined-petroleum exports (SITC 334)."},
+    "sg_petroleum_export_share_th": {"name": "Thailand",    "desc": "Thailand's share of SG refined-petroleum exports (SITC 334)."},
+    "sg_petroleum_export_share_vn": {"name": "Vietnam",     "desc": "Vietnam's share of SG refined-petroleum exports (SITC 334)."},
+    "sg_petroleum_export_share_others": {"name": "Others",  "desc": "Annual SG refined-petroleum (SITC 334) export share to non-regional destinations (mainly US/EU). 100 − sum of the 10 regional countries' shares."},
 
     # Regional Trade Exposure tab — per-country chemical-imports-from-SG cards.
     # Each card has 1 dataset per chart, so the friendly_name shows up on

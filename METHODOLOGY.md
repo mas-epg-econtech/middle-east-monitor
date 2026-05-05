@@ -331,7 +331,7 @@ Single function builds a Chart.js v4 config from a list of series. Handles:
 - **Auto-quarterly x-axis ticks** — when all series in a chart are
   `frequency=Quarterly`, the x-axis switches from monthly ticks to
   `Q1 2025`-style quarter labels (Chart.js `time.unit: "quarter"` with
-  `displayFormats: {quarter: "QQQ yyyy"}`). Applied to URA PPI; other
+  `displayFormats: {quarter: "yyyy'Q'q"}`). Applied to URA PPI; other
   cards remain monthly.
 - **Forward-fill** for sparse multi-series charts where one series is
   much sparser than the others (e.g. PH 10Y bond auctions vs daily

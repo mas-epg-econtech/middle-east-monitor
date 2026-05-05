@@ -139,7 +139,13 @@ no commentary outside the JSON.
   "energy_supply": {
     "level": "calm" | "watchful" | "strained" | "critical",
     "level_rationale": "<1-2 sentences explaining why this level was chosen vs the adjacent levels. Audit-trail field; not rendered to viewers by default.>",
-    "narrative": "<3-4 sentence narrative for the landing-page banner. Tight, decisive.>",
+    "narrative_sections": [
+      {"label": "Upstream prices",       "body": "<1-2 sentences — crude + refined-fuel/petchem chain>"},
+      {"label": "Inflation passthrough", "body": "<1-2 sentences — regional + SG consumer prices>"},
+      {"label": "Physical supply",       "body": "<1-2 sentences — SG refining/petchem output + tanker flows>"},
+      {"label": "Downstream activity",   "body": "<1-2 sentences — SG broader sectoral + regional IPI>"},
+      {"label": "Overall",               "body": "<1 sentence — aggregate read + key vulnerabilities>"}
+    ],
     "drivers": [
       {
         "text": "<short driver phrase, ~10-15 words, naming a key driver>",
@@ -151,7 +157,13 @@ no commentary outside the JSON.
   "financial_markets": {
     "level": "calm" | "watchful" | "strained" | "critical",
     "level_rationale": "<1-2 sentences>",
-    "narrative": "<3-4 sentences>",
+    "narrative_sections": [
+      {"label": "Credit Risk",        "body": "<1-2 sentences>"},
+      {"label": "Interest Rate Risk", "body": "<1-2 sentences>"},
+      {"label": "FX Risk",            "body": "<1-2 sentences>"},
+      {"label": "Liquidity Risk",     "body": "<1-2 sentences>"},
+      {"label": "Overall",            "body": "<1 sentence — aggregate read + key vulnerabilities>"}
+    ],
     "drivers": [
       {"text": "...", "chart_ids": [...]},
       ...
@@ -178,27 +190,46 @@ no commentary outside the JSON.
       is calm'). Not Strained because no SG dimension is materially
       stressed."
 
-- **narrative** — 3-4 sentences. The headline read of the situation. Open
-  with the substantive movement — do NOT lead with the level word (the
-  badge already shows the level; the narrative shouldn't repeat it).
-  Specific magnitudes throughout, no hedging. **Do NOT reference internal
-  scoring mechanics, level cutoffs, or rubric language in the narrative** —
-  phrases like "meets the Critical threshold", "exceeds the watchful
-  cutoff", "below the major-concern band", or "the corroboration triggers
-  the strained level" leak internal mechanics the viewer has no context
-  for. Just describe what the indicators are doing in plain market-analyst
-  language; the badge conveys the level. Examples of the right tone:
-    - Energy / Strained: "Brent has surged 86% from the November-December
-      baseline to $117/bbl, with naphtha and jet-fuel passthrough running
-      near 100%. Singapore's refining complex has slowed visibly (refining
-      IIP −22%) and tanker import tonnage is averaging 19% below
-      counterfactual. Downstream impact is now corroborating the upstream
-      price shock."
-    - Financial / Calm: "The SGD has strengthened 1.1% against the USD,
-      sitting at the lower end of its war-period range, with implied vol
-      close to a war-period low. SGS yield curve and STI are within ±5%
-      of pre-war benchmarks; no broad-based dislocation. Regional FX has
-      held in narrow ranges against the USD."
+- **narrative_sections** (both energy_supply and financial_markets) —
+  see the dedicated guidance subsections below. Same schema for both:
+  an ordered list of `{label, body}` objects, rendered as a bulleted
+  list with the label in bold inline. Replaces the older single-string
+  `narrative` field. **Strict rules that apply to both — non-negotiable:**
+    - **Length:** each section body is a single short sentence, target
+      10–20 words. **Hard cap: 25 words.** If you can't say it in 25
+      words, the bullet is doing too much work — split it or move
+      detail into `drivers`.
+    - **Numbers sparingly — at most one anchor number per body, and
+      only when it materially aids the read.** Default to qualitative
+      descriptors: "nearly doubled", "well below pre-war pace",
+      "broadly stable", "rising sharply", "narrow ranges". The
+      chart-citation badges in `drivers` carry the audit-trail
+      numbers — that's where the bulk of percentages, basis points,
+      and dollar figures belong. Calibration: the headline price level
+      (e.g. $124/bbl Brent) is fine as one anchor; the full
+      pass-through breakdown (refined products +70–103%, ethylene
+      +94–130%) is data-table territory and goes in `drivers`.
+        - **Right:** "Brent has nearly doubled to ~$124/bbl, with
+          refined fuels and petrochemicals following the move." (1
+          anchor number, the rest qualitative)
+        - **Wrong (too many numbers):** "Brent crude has nearly doubled
+          to $124/bbl, with refined products up 70–103%, ethylene up
+          94–130%, and polymers confirming the pressure"
+        - **Right:** "Regional sovereign yield spikes in the Philippines
+          and Indonesia signal rising external credit risk." (zero
+          numbers; the +102 bp / +64 bp specifics live in drivers)
+        - **Wrong (data dump):** "Singapore refining is down 22% and
+          petrochemicals down 28%, with tanker exports 24% below pace
+          and Malacca transits 12–14% short and South Korea tanker
+          imports 36% below pre-war"
+        - **Right:** "Singapore refining and petrochemical output are
+          sharply lower, and tanker flows are well below pre-war pace
+          across the region."
+    - Open with the substantive movement — do NOT lead with the level
+      word (the badge already shows it).
+    - Do NOT reference internal scoring mechanics, level cutoffs, or
+      rubric language ("meets the Critical threshold", "below the
+      major-concern band", etc.).
 
 - **FX phrasing precision** — when describing currency moves, name the
   currency that appreciated/depreciated, not the pair. The pair name
@@ -207,6 +238,100 @@ no commentary outside the JSON.
   against one of its constituents). Right: "the SGD strengthened 1.1%
   against the USD" or "USD/SGD fell 1.1% (SGD appreciation)". Apply the
   same care for crosses (EUR/USD, USD/CNY, etc).
+
+### Energy Supply narrative — 5 labelled sections (2×2 framework + Overall)
+
+Emit `narrative_sections`: an ordered list of exactly 5 `{label, body}`
+objects. The first four sections cover a 2×2 of the transmission space:
+**nominal vs real** crossed with **upstream vs downstream**. The fifth
+ties the read together. Symmetric structure with the Financial Markets
+card so both feel parallel.
+
+**Each `body` is a single short sentence, 10–20 words, hard cap 25.**
+**Numbers sparingly — at most one anchor number per body, and only
+when it materially aids the read.** Use qualitative descriptors for
+the rest; full magnitudes live in `drivers`.
+
+Sections (in this exact order, all 5 always emitted):
+
+1. **`Upstream prices`** *(upstream nominal)* — crude and the
+   refined-fuel / petrochemical price chain. Example body: "Brent has
+   nearly doubled to ~$124/bbl, with refined fuels and petrochemicals
+   following the move."
+
+2. **`Inflation passthrough`** *(downstream nominal)* — where the
+   price shock is reaching consumer prices, regionally and in
+   Singapore. Example body: "Pass-through into consumer prices is
+   uneven — visible in a couple of regional economies but not
+   widespread yet."
+
+3. **`Physical supply`** *(upstream real)* — Singapore's refining /
+   petrochem production, tanker flows (SG + regional), shipping
+   nowcast gaps. Example body: "Singapore refining and petrochemical
+   output are sharply lower, with regional tanker flows well below
+   pre-war pace."
+
+4. **`Downstream activity`** *(downstream real)* — broader sectoral
+   real-side hits: SG wholesale / transport / construction / F&B +
+   regional IPI. Use "no notable downstream impact" if these sectors
+   are quiet. Example body: "Beyond refining, broader SG sectoral
+   activity is softening modestly while regional manufacturing data
+   are largely too stale to read."
+
+5. **`Overall`** *(synthesis)* — aggregate read + key vulnerability.
+   Example: "Severe upstream price shock with corroborating physical
+   disruption; key vulnerability is whether tanker flows and inflation
+   pass-through stabilise or worsen."
+
+If a section has no material signal, write a brief "no notable signal"
+line rather than dropping it — the structure must always be 5 sections.
+
+### Financial Markets narrative — 5 risk-categorised sections
+
+Emit `narrative_sections`: an ordered list of exactly 5 sections, each
+labelled with one of the risk categories below. Aggregate framing —
+this is the *region's* financial-markets read, not Singapore-only.
+Singapore findings carry weight (it's an MAS-internal dashboard), but
+regional findings — sovereign yields, EM FX moves, EM credit — must
+be incorporated wherever they materially shift the picture.
+
+**Each `body` is a single short sentence, 10–20 words, hard cap 25.**
+**Numbers sparingly — at most one anchor number per body, and only
+when it materially aids the read.** Use qualitative descriptors for
+the rest; full magnitudes (basis points, exact percentages) live in
+`drivers`.
+
+Sections (in this exact order, all 5 always emitted):
+
+1. **Credit Risk** — sovereign-credit signals: regional 10Y sovereign
+   yields, credit spreads if visible, signs of credit stress. Both SG
+   and regional. Example: "Stable in Singapore with orderly markets;
+   regional sovereign yield spikes in the Philippines and Indonesia
+   signal rising external credit risks."
+
+2. **Interest Rate Risk** — domestic + regional rate dynamics: SGS
+   yield curve, SORA direction, regional 10Y yields, rate
+   differentials. Example: "SGS yields anchored and SORA easing, but
+   regional yields remain elevated."
+
+3. **FX Risk** — currency moves and vol: SGD spot / NEER / implied
+   vol + regional FX (PHP, IDR, MYR, THB). Example: "SGD strong with
+   low volatility; PHP and IDR depreciation highlights regional FX
+   pressures."
+
+4. **Liquidity Risk** — funding-market signals: SORA, interbank,
+   funding-stress proxies. Frame SG money-market rates as funding-cost
+   / liquidity signals (NEVER as policy moves — see the Singapore
+   monetary-policy framing rule below). Example: "Domestic funding
+   conditions remain ample with no stress."
+
+5. **Overall** — one sentence: aggregate read on the financial-markets
+   level + the key vulnerabilities driving it. Example: "Singapore
+   remains resilient, but key vulnerabilities stem from regional rate
+   and FX pressures with potential spillovers."
+
+If a section has no material signal, write a brief "no notable signal"
+line rather than dropping it — the structure must always be 5 sections.
 - **drivers** — 3-5 driver objects. Each `text` field names one driver
   in 10-15 words; each driver's `chart_ids` list cites 1-3 charts that
   support that specific driver. Each chart_id must come from a page-level
@@ -254,6 +379,50 @@ no commentary outside the JSON.
 - "Critical" is a high bar — reserve for true tail-risk realisations
   (Hormuz closure, multi-week tanker stoppage, regional financial crisis),
   not for ordinary war-period elevation. When in doubt, prefer Strained.
+
+### Plain-language guardrail — no bare jargon in narratives
+
+Narratives are read by an MAS audience that may not have the methodology
+doc open. Any technical term must be either replaced with plain English or
+glossed inline on first use. Specifically:
+
+- **"Counterfactual"** — do NOT use the bare term. Also avoid jargon
+  paraphrases like "the model's no-war estimate", "the model-implied
+  no-war level", or "the no-war benchmark" — these are still technical.
+  Prefer plain English that doesn't mention the model at all:
+    - "below pre-war pace"
+    - "running short of normal for the period"
+    - "materially weaker than in a normal year"
+    - "well below where flows would be in a normal year"
+    - "noticeably below pre-conflict norms"
+  Examples:
+    - **Wrong:** "tanker export tonnage 24% below counterfactual"
+    - **Wrong (still jargon):** "tanker export tonnage 24% below the
+      model's no-war estimate"
+    - **Right:** "tanker export tonnage 24% below pre-war pace"
+    - **Right:** "Malacca Strait transits averaging 14% below normal
+      for this period"
+  When precision is essential (e.g. for the audit-trail `level_rationale`
+  field, which is internal and not viewer-facing), the technical term
+  "counterfactual" is fine to use. Plain language is required only in
+  the viewer-facing `narrative_sections` and `drivers` fields.
+- **"Pre-war baseline"** — prefer the explicit dating where possible.
+  Acceptable replacements:
+    - "the November–December 2025 average"
+    - "the pre-conflict average"
+    - "pre-war levels" (when no precise base period needed)
+  Examples:
+    - **Wrong:** "Brent has surged 97% from pre-war baseline"
+    - **Right:** "Brent has surged 97% from its November–December 2025
+      average to $124/bbl"
+    - **Right:** "Brent has nearly doubled from pre-conflict levels"
+- **Other terms to avoid as bare jargon:** "passthrough" (use "pass-
+  through into prices" or "downstream price impact"); "STL+Ridge nowcast"
+  (just "model estimate"); "concern_score" or "level_rationale" (these
+  are internal mechanics — never surface them).
+- When a technical concept can't be avoided, gloss it inline parenthetically:
+  "tanker tonnage 36% below counterfactual (the model's no-war estimate)".
+  But prefer the plain-language replacement when feasible.
 
 ### Singapore monetary-policy framing — strict rule
 

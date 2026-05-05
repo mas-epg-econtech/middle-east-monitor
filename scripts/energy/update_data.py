@@ -84,10 +84,17 @@ from src.derived_series import (
     compute_mas_core_mom,
     compute_singstat_chem_export_country_series,
     compute_singstat_petroleum_export_country_series,
+    compute_singstat_totaloil_export_country_series,
     compute_sg_me_import_shares,
     compute_sg_import_monthly_aggregates,
+    compute_sg_import_partner_shares_v2,
+    compute_regional_ipi_index_levels,
     compute_sg_chem_export_regional_shares,
     compute_sg_chem_export_monthly_aggregates,
+    compute_sg_petroleum_export_regional_shares,
+    compute_sg_petroleum_export_monthly_aggregates,
+    compute_sg_totaloil_export_regional_shares,
+    compute_sg_totaloil_export_monthly_aggregates,
     compute_regional_chem_share_from_sg,
     compute_regional_chem_levels,
     compute_regional_fuel_share_from_sg,
@@ -415,6 +422,7 @@ SHEET_TRADE_IMPORT_ANNUAL  = "SG_Annual_Imports"
 SHEET_TRADE_IMPORT_MONTHLY = "SG_Monthly_Imports"
 SHEET_TRADE_CHEMICALS_DX   = "SG_Chemicals_DX"
 SHEET_TRADE_PETROLEUM_DX   = "SG_Petroleum_DX"   # SITC 334 refined petroleum
+SHEET_TRADE_TOTALOIL_DX    = "SG_TotalOil_DX"    # SITC 3   total oil (mineral fuels chapter)
 
 # Friendly labels for SITC codes seen in the imports tabs. Anything not in
 # this dict gets product_label = f"SITC {code}".
@@ -660,6 +668,11 @@ def fetch_singstat_trade_from_gsheets() -> pd.DataFrame:
          partial(_parse_singstat_chemicals_dx_tab,
                  product_code="SITC_334",
                  product_label="Refined petroleum (SITC 334)"),
+         False),
+        (SHEET_TRADE_TOTALOIL_DX,
+         partial(_parse_singstat_chemicals_dx_tab,
+                 product_code="SITC_3",
+                 product_label="Total oil — mineral fuels chapter (SITC 3)"),
          False),
     ):
         try:
@@ -1499,19 +1512,38 @@ def main():
     print(f"\n[3b.b] Computing per-country refined-petroleum-export series (SITC 334)...")
     n_pet = compute_singstat_petroleum_export_country_series(conn)
     print(f"  -> {n_pet} rows written across 10 regional series_ids")
+    print(f"\n[3b.c] Computing per-country total-oil-export series (SITC 3)...")
+    n_oil = compute_singstat_totaloil_export_country_series(conn)
+    print(f"  -> {n_oil} rows written across 10 regional series_ids")
 
     # 3c. Singapore Trade tab derivations — annual ME shares of mineral fuel
-    # imports per SITC, monthly aggregates, regional shares of chemical
-    # exports, and monthly chemical export aggregates. Plus 2023-25
-    # monthly-average benchmarks stashed in metadata for the chart reference
-    # lines. Sourced entirely from trade_singstat (no API calls).
+    # imports per SITC, monthly aggregates, regional shares of chemical /
+    # refined-petroleum / total-oil exports, and monthly export aggregates.
+    # Plus 2023-25 monthly-average benchmarks stashed in metadata for the
+    # chart reference lines. Sourced entirely from trade_singstat (no API calls).
     print(f"\n[3c] Computing Singapore Trade tab derived series...")
     n_share_imp = compute_sg_me_import_shares(conn)
     n_mon_imp   = compute_sg_import_monthly_aggregates(conn)
-    n_share_exp = compute_sg_chem_export_regional_shares(conn)
-    n_mon_exp   = compute_sg_chem_export_monthly_aggregates(conn)
+    n_pshare_v2 = compute_sg_import_partner_shares_v2(conn)
+    n_share_exp_chem = compute_sg_chem_export_regional_shares(conn)
+    n_mon_exp_chem   = compute_sg_chem_export_monthly_aggregates(conn)
+    n_share_exp_pet  = compute_sg_petroleum_export_regional_shares(conn)
+    n_mon_exp_pet    = compute_sg_petroleum_export_monthly_aggregates(conn)
+    n_share_exp_oil  = compute_sg_totaloil_export_regional_shares(conn)
+    n_mon_exp_oil    = compute_sg_totaloil_export_monthly_aggregates(conn)
     print(f"  -> {n_share_imp} ME-share import rows | {n_mon_imp} monthly import-aggregate rows")
-    print(f"  -> {n_share_exp} regional-share export rows | {n_mon_exp} monthly export-aggregate rows")
+    print(f"  -> {n_pshare_v2} partner-share v2 rows (top-N + ME-affected + others + me_affected aggregate)")
+    print(f"  -> chem  exports: {n_share_exp_chem} regional-share rows | {n_mon_exp_chem} monthly aggregate rows")
+    print(f"  -> petr  exports: {n_share_exp_pet} regional-share rows | {n_mon_exp_pet} monthly aggregate rows")
+    print(f"  -> total-oil exp: {n_share_exp_oil} regional-share rows | {n_mon_exp_oil} monthly aggregate rows")
+
+    # 3c.c Regional Sectoral Activity tab — rebase per-country IPI level
+    # series to a common 2025=100 scale (aligns with Singapore Sectoral
+    # IPI's "Index 2025=100"). Reads `regional_ipi_level_<iso2>` (fetched
+    # by migrate_fetch_regional_ipi_levels.py) and emits
+    # `regional_ipi_index_<iso2>`.
+    n_ipi_idx = compute_regional_ipi_index_levels(conn)
+    print(f"  -> {n_ipi_idx} regional IPI index rows (rebased to 2025=100)")
 
     # 3c.b Regional Trade tab — per-country MONTHLY LEVELS only.
     # The annual SHARES derivation depends on `trade_comtrade_dep` which

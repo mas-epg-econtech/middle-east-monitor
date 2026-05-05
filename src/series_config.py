@@ -608,6 +608,84 @@ SERIES_REGISTRY = {'global_crude_oil': {'series_id': 'global_crude_oil',
                      'frequency': 'Monthly'},
 
  # ════════════════════════════════════════════════════════════════════════
+ # REGIONAL IPI LEVELS — May 2026 reviewer rework. The YoY series above
+ # are the headline % YoY prints; these level series let us show level
+ # /index format aligned with Singapore Sectoral IPI ("Index 2025=100").
+ # Each country publishes on a different base year — `derived_series
+ # .compute_regional_ipi_index_levels` rebases each one to 2025=100 and
+ # writes `regional_ipi_index_<iso2>` for the chart to consume.
+ #
+ # CHINA NOTE: NBS publishes Value Added of Industry (VAI) as YoY only —
+ # there's no continuous level index in CEIC (verified May 2026 via
+ # find_ceic_series.py "China VAI" / "China Value Added of Industry").
+ # The original `371937157` Industrial Production Index 2010=100 was
+ # discontinued after Nov 2022. So China gets a sentinel source key
+ # here — the migration script skips it, and at build time the derived
+ # series falls back to YoY-chain reconstruction from `regional_ipi_cn`
+ # (the YoY VAI series). All other 9 countries use real CEIC level data.
+ # ════════════════════════════════════════════════════════════════════════
+ 'regional_ipi_level_cn': {'series_id': 'regional_ipi_level_cn',
+                           'source': 'ceic',
+                           'source_key': 'SKIP_NBS_VAI_LEVEL_NOT_PUBLISHED',
+                           'label': 'China Value Added of Industry — NBS does not publish a level series',
+                           'unit': 'Index',
+                           'frequency': 'Monthly'},
+ 'regional_ipi_level_in': {'series_id': 'regional_ipi_level_in',
+                           'source': 'ceic',
+                           'source_key': '386587797',
+                           'label': 'India Industrial Production Index',
+                           'unit': 'Index (2011-12=100)',
+                           'frequency': 'Monthly'},
+ 'regional_ipi_level_id': {'series_id': 'regional_ipi_level_id',
+                           'source': 'ceic',
+                           'source_key': '322957602',
+                           'label': 'Indonesia Industrial Production Index',
+                           'unit': 'Index (2010=100)',
+                           'frequency': 'Monthly'},
+ 'regional_ipi_level_jp': {'series_id': 'regional_ipi_level_jp',
+                           'source': 'ceic',
+                           'source_key': '508465317',
+                           'label': 'Japan Mining & Manufacturing Production Index',
+                           'unit': 'Index (2020=100)',
+                           'frequency': 'Monthly'},
+ 'regional_ipi_level_my': {'series_id': 'regional_ipi_level_my',
+                           'source': 'ceic',
+                           'source_key': '402561157',
+                           'label': 'Malaysia Industrial Production Index',
+                           'unit': 'Index (2015=100)',
+                           'frequency': 'Monthly'},
+ 'regional_ipi_level_ph': {'series_id': 'regional_ipi_level_ph',
+                           'source': 'ceic',
+                           'source_key': '458913927',
+                           'label': 'Philippines Industrial Production Volume Index',
+                           'unit': 'Index (2018=100)',
+                           'frequency': 'Monthly'},
+ 'regional_ipi_level_kr': {'series_id': 'regional_ipi_level_kr',
+                           'source': 'ceic',
+                           'source_key': '505286737',
+                           'label': 'South Korea All Industry Production Index',
+                           'unit': 'Index (2020=100)',
+                           'frequency': 'Monthly'},
+ 'regional_ipi_level_tw': {'series_id': 'regional_ipi_level_tw',
+                           'source': 'ceic',
+                           'source_key': '508241517',
+                           'label': 'Taiwan Industrial Production Index',
+                           'unit': 'Index (2021=100)',
+                           'frequency': 'Monthly'},
+ 'regional_ipi_level_th': {'series_id': 'regional_ipi_level_th',
+                           'source': 'ceic',
+                           'source_key': '522375327',
+                           'label': 'Thailand Value Added Production Index',
+                           'unit': 'Index (2021=100)',
+                           'frequency': 'Monthly'},
+ 'regional_ipi_level_vn': {'series_id': 'regional_ipi_level_vn',
+                           'source': 'ceic',
+                           'source_key': '389657597',
+                           'label': 'Vietnam Industrial Production Index',
+                           'unit': 'Index (2015=100)',
+                           'frequency': 'Monthly'},
+
+ # ════════════════════════════════════════════════════════════════════════
  # REGIONAL FINANCIAL MARKETS — added 2026-04-30 to backfill pre-war
  # history. Replaces the day-by-day-only ADB AsianBondsOnline scrape
  # (bonds) and investing.com scrape (LME nickel). CEIC source keys

@@ -130,6 +130,26 @@ baseline in `data_gaps`.
   context for. Just describe what each indicator is doing in plain
   market-analyst language.
 
+### Plain-language guardrail — no bare jargon
+
+The viewer may not have the methodology doc open. Use plain English; gloss
+any technical term inline on first use, or replace with a plainer phrase.
+- **"Counterfactual"** — do NOT use the bare term. Also avoid jargon
+  paraphrases like "the model's no-war estimate" — these are still
+  technical. Prefer plain English that doesn't mention the model:
+  "below pre-war pace", "running short of normal for the period",
+  "materially weaker than in a normal year", or "noticeably below
+  pre-conflict norms". The technical term is fine in internal /
+  audit-trail fields but not in viewer-facing narrative or drivers.
+- **"Pre-war baseline"** — prefer "the November–December 2025 average"
+  or "the pre-conflict average" or "pre-war levels" depending on context.
+- **"Passthrough"** — prefer "pass-through into prices" or "downstream
+  price impact"; "passthrough" alone is fine if the meaning is obvious
+  from context (e.g. "near-total passthrough into refined products").
+- When a technical term is unavoidable, gloss it inline:
+  "tonnage 36% below counterfactual (the model's no-war estimate)".
+  But replacing with the plain phrase is preferred.
+
 # User
 
 Below is the latest snapshot of the Global Shocks page indicators.

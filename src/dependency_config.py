@@ -49,7 +49,7 @@ DEPENDENCY_NODES = {
     # ==================================================================
     "crude_oil": node(
         label="Crude Oil",
-        description="Global crude benchmarks — the primary channel through which an Iran conflict transmits price shocks.",
+        description="Global crude benchmarks.",
         children=[
             "marine_fuel",
             "jet_fuel",
@@ -66,7 +66,7 @@ DEPENDENCY_NODES = {
     ),
     "natural_gas": node(
         label="Natural Gas",
-        description="Global gas benchmarks — Iran/Gulf disruption affects LNG flows, pipeline gas, and downstream fertiliser and power costs.",
+        description="Global gas benchmarks.",
         children=[
             "fertilisers",
             "gas_electricity",
@@ -85,7 +85,7 @@ DEPENDENCY_NODES = {
     # ==================================================================
     "marine_fuel": node(
         label="Marine Fuel",
-        description="Bunker fuel prices (VLSFO, 380cst) — cost driver for shipping and bunkering activity.",
+        description="Bunker fuel prices (VLSFO, 380cst).",
         children=[
             "water_transport",
             "wholesale",
@@ -98,7 +98,7 @@ DEPENDENCY_NODES = {
     ),
     "jet_fuel": node(
         label="Jet Fuel",
-        description="Aviation fuel prices — cost driver for airlines and air freight.",
+        description="Aviation fuel prices.",
         children=[
             "air_transport",
         ],
@@ -111,7 +111,7 @@ DEPENDENCY_NODES = {
     ),
     "diesel_petrol": node(
         label="Diesel / Petrol",
-        description="Road fuel prices — cost driver for land transport and logistics.",
+        description="Road fuel prices.",
         children=[
             "land_transport",
         ],
@@ -124,7 +124,7 @@ DEPENDENCY_NODES = {
     ),
     "naphtha": node(
         label="Naphtha",
-        description="Key petrochemical feedstock — price drives cracker economics and downstream chemical costs.",
+        description="Key petrochemical feedstock.",
         children=[
             "olefins_aromatics",
             "petrochemicals",
@@ -164,7 +164,7 @@ DEPENDENCY_NODES = {
     # ==================================================================
     "olefins_aromatics": node(
         label="Olefins & Aromatics",
-        description="Ethylene, propylene, polyethylene — intermediate chemicals whose costs feed into manufacturing sectors.",
+        description="Ethylene, propylene, polyethylene — intermediate chemicals.",
         children=[
             "petrochemicals",
             "basic_chemicals",
@@ -214,7 +214,7 @@ DEPENDENCY_NODES = {
     ),
     "fertilisers": node(
         label="Fertilisers",
-        description="Urea and ammonia prices — gas-derived via Haber-Bosch process; cost driver for agriculture and food.",
+        description="Urea and ammonia prices — gas-derived via Haber-Bosch process.",
         children=[
             "food_beverage",
         ],
@@ -233,7 +233,7 @@ DEPENDENCY_NODES = {
     # ── Transport ──
     "water_transport": node(
         label="Water Transport",
-        description="Port throughput and cargo volumes — affected by marine fuel costs.",
+        description="Port throughput and cargo volumes.",
         series_ids=[
             "sea_cargo_handled",
             "container_throughput",
@@ -243,7 +243,7 @@ DEPENDENCY_NODES = {
     ),
     "air_transport": node(
         label="Air Transport",
-        description="Flight movements, passenger traffic, air freight — affected by jet fuel costs.",
+        description="Flight movements, passenger traffic, air freight.",
         series_ids=[
             "air_flight_movements",
             "air_passenger_movements",
@@ -254,7 +254,7 @@ DEPENDENCY_NODES = {
     ),
     "land_transport": node(
         label="Land Transport",
-        description="Road transport activity — affected by diesel and petrol costs.",
+        description="Road transport activity.",
         children=["sg_cpi"],
         series_ids=[
             "visitor_arrival_land",
@@ -275,7 +275,7 @@ DEPENDENCY_NODES = {
     # ── Energy & Chemicals ──
     "petroleum": node(
         label="Petroleum Refining",
-        description="Refinery output — directly affected by crude oil costs and margins.",
+        description="Refinery output.",
         children=["sg_import_prices", "sg_export_prices"],
         # 2026-04-30: dropped singstat_imports_petroleum/exports_petroleum (the
         # legacy SITC-33-aggregate refining trade card). Same data is now on
@@ -286,7 +286,7 @@ DEPENDENCY_NODES = {
     ),
     "petrochemicals": node(
         label="Petrochemicals",
-        description="Petrochemical production — affected by naphtha/LPG feedstock costs and olefin prices.",
+        description="Petrochemical production.",
         children=["sg_producer_prices"],
         series_ids=["ipi_petrochemicals"],
         google_sheet_series=[],
@@ -294,14 +294,14 @@ DEPENDENCY_NODES = {
     ),
     "basic_chemicals": node(
         label="Specialty and other chemicals",
-        description="Industrial production indices for specialty chemicals (paints, coatings, adhesives) and other chemicals (basic intermediates). Both downstream of crude/naphtha — capture how upstream feedstock cost pressure propagates through the chemicals value chain.",
+        description="Industrial production indices for specialty chemicals (paints, coatings, adhesives) and other chemicals (basic intermediates).",
         series_ids=["ipi_specialty_chemicals", "ipi_other_chemicals"],
         google_sheet_series=[],
         sheet_keywords=["chemical", "methanol", "ammonia", "caustic"],
     ),
     "gas_electricity": node(
         label="Electricity tariff (households)",
-        description="Low-tension domestic electricity tariff. Almost all of Singapore's power generation runs on imported natural gas, so the tariff lags but tracks LNG and pipeline-gas prices — the household-facing channel for Middle East gas-supply disruption.",
+        description="Low-tension domestic electricity tariff. Almost all of Singapore's power generation runs on imported natural gas, so the tariff tracks LNG and pipeline-gas prices with a lag.",
         children=["sg_cpi", "sg_supply_prices"],
         series_ids=["singstat_electricity_tariff"],
         google_sheet_series=[],
@@ -311,7 +311,7 @@ DEPENDENCY_NODES = {
     # ── Wholesale ──
     "wholesale": node(
         label="Wholesale trade",
-        description="Foreign Wholesale Trade Index — overall plus the petroleum, chemicals, and ship-chandlers/bunkering subsectors. Direct gauge of how upstream cost shocks pass through to wholesale activity at the Port of Singapore.",
+        description="Foreign Wholesale Trade Index — overall plus the petroleum, chemicals, and ship-chandlers/bunkering subsectors.",
         series_ids=[
             "fwti_overall",
             "fwti_petroleum",
@@ -325,7 +325,7 @@ DEPENDENCY_NODES = {
     # ── Downstream ──
     "construction_demand": node(
         label="Construction demand",
-        description="Construction-sector activity — value of contracts awarded plus physical-volume demand for cement, steel, and granite. Direct gauge of building activity; cement and steel demand are sensitive to upstream energy-cost pressure since both are energy-intensive to produce.",
+        description="Construction-sector activity — value of contracts awarded plus physical-volume demand for cement, steel, and granite.",
         series_ids=[
             "singstat_construction_contracts",
             "ceic_constr_demand_cement",
@@ -337,7 +337,7 @@ DEPENDENCY_NODES = {
     ),
     "construction_prices": node(
         label="Construction material prices",
-        description="Monthly prices of key construction materials — cement, steel bars, granite, and concreting sand. Direct passthrough channel for upstream chemicals and energy cost pressure into the building cost base.",
+        description="Monthly prices of key construction materials — cement, steel bars, granite, and concreting sand.",
         series_ids=[
             "ceic_constr_price_cement",
             "ceic_constr_price_steel",
@@ -349,7 +349,7 @@ DEPENDENCY_NODES = {
     ),
     "real_estate": node(
         label="Real estate",
-        description="Property-market activity — indirectly exposed to upstream cost shocks via construction-cost passthrough and utility-price moves.",
+        description="Property-market activity.",
         series_ids=[
             "ceic_property_price_index",
             "ceic_residential_transactions",
@@ -359,7 +359,7 @@ DEPENDENCY_NODES = {
     ),
     "food_beverage": node(
         label="Food and beverage services",
-        description="F&B Services Index — overall sector plus the five segments (restaurants, fast food, caterers, food courts, cafes). Captures how imported food-input cost pressure (driven by fertiliser, packaging, and transport costs) flows through to consumer-facing F&B activity.",
+        description="F&B Services Index — overall sector plus the five segments (restaurants, fast food, caterers, food courts, cafes).",
         children=["sg_cpi"],
         series_ids=[
             "fb_overall",
@@ -379,35 +379,35 @@ DEPENDENCY_NODES = {
     # ==================================================================
     "sg_cpi": node(
         label="Inflation",
-        description="Headline CPI and MAS Core inflation — the broadest measure of how energy and imported-input cost shocks reach Singapore households.",
+        description="Headline CPI and MAS Core inflation.",
         series_ids=["ceic_cpi_yoy", "ceic_cpi_mom", "ceic_mas_core_inflation", "mas_core_inflation_mom"],
         google_sheet_series=[],
         sheet_keywords=["cpi", "inflation"],
     ),
     "sg_supply_prices": node(
         label="Domestic supply prices",
-        description="Prices of goods supplied to the Singapore market — split into oil and non-oil components. Sits upstream of CPI in the price chain; oil component reacts directly to crude-oil cost shocks.",
+        description="Prices of goods supplied to the Singapore market — split into oil and non-oil components.",
         series_ids=["ceic_dspi_oil", "ceic_dspi_non_oil"],
         google_sheet_series=[],
         sheet_keywords=["supply price", "dspi"],
     ),
     "sg_producer_prices": node(
         label="Producer prices",
-        description="Factory-gate prices for goods manufactured in Singapore (excludes imports), split into oil and non-oil. Captures how upstream cost pressure shows up before retail-level inflation.",
+        description="Factory-gate prices for goods manufactured in Singapore (excludes imports), split into oil and non-oil.",
         series_ids=["ceic_mppi_oil", "ceic_mppi_non_oil"],
         google_sheet_series=[],
         sheet_keywords=["producer price", "mppi"],
     ),
     "sg_import_prices": node(
         label="Import prices",
-        description="Prices of imports landing in Singapore — split into oil, non-oil, and food components. Direct gauge of imported cost-push pressure during Middle East supply disruptions.",
+        description="Prices of imports landing in Singapore — split into oil, non-oil, and food components.",
         series_ids=["ceic_ipi_oil", "ceic_ipi_non_oil", "ceic_ipi_food"],
         google_sheet_series=[],
         sheet_keywords=["import price"],
     ),
     "sg_export_prices": node(
         label="Export prices",
-        description="Prices Singapore exporters charge overseas buyers — split into oil and non-oil. Reveals how much upstream cost shocks are passed through to external customers, and signals export competitiveness.",
+        description="Prices Singapore exporters charge overseas buyers — split into oil and non-oil.",
         series_ids=["ceic_epi_oil", "ceic_epi_non_oil"],
         google_sheet_series=[],
         sheet_keywords=["export price"],
@@ -418,7 +418,7 @@ DEPENDENCY_NODES = {
     # ==================================================================
     "regional_cpi_headline": node(
         label="Regional Headline CPI",
-        description="Year-on-year headline CPI inflation across 10 Asian economies — broadest pass-through gauge for Iran/Hormuz energy shocks.",
+        description="Year-on-year headline CPI inflation across 10 Asian economies.",
         series_ids=[
             "regional_cpi_headline_cn",
             "regional_cpi_headline_in",
@@ -436,7 +436,7 @@ DEPENDENCY_NODES = {
     ),
     "regional_cpi_core": node(
         label="Regional Core CPI",
-        description="Year-on-year core CPI inflation (excluding food and energy) across the same 10 economies — strips out the direct shock to isolate second-round pass-through.",
+        description="Year-on-year core CPI inflation (excluding food and energy) across the same 10 economies.",
         series_ids=[
             "regional_cpi_core_cn",
             "regional_cpi_core_in",
@@ -454,7 +454,7 @@ DEPENDENCY_NODES = {
     ),
     "regional_ipi": node(
         label="Regional Industrial Production",
-        description="Year-on-year change in industrial / manufacturing production for 10 Asian economies — real-side activity gauge that captures hits to manufacturing from energy and input cost shocks.",
+        description="Year-on-year change in industrial / manufacturing production for 10 Asian economies.",
         series_ids=[
             "regional_ipi_cn",
             "regional_ipi_in",

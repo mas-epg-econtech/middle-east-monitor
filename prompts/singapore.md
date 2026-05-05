@@ -137,8 +137,10 @@ The summary stats are pre-computed:
   something because the data isn't here, say so in `data_gaps`.
 - No counterfactual speculation, no policy recommendations, no historical
   comparisons not visible in the data.
-- For shipping, prefer the `nowcast_pairs` actual-vs-counterfactual framing
-  over delta-vs-baseline (which is misleading for those series).
+- For shipping, prefer the `nowcast_pairs` actual-vs-no-war-estimate
+  framing over delta-vs-baseline (which is misleading for those series).
+  In the narrative itself, use plain language — see "Plain-language
+  guardrail" below.
 - Drop any claim with no chart support.
 - **Do NOT reference internal scoring anchors or rubric thresholds in the
   output.** The concern_score anchors above are calibration guidance for
@@ -148,6 +150,26 @@ The summary stats are pre-computed:
   reference to scoring rubrics leak internal mechanics the viewer has no
   context for. Just describe what each indicator is doing in plain
   market-analyst language.
+
+### Plain-language guardrail — no bare jargon
+
+The viewer may not have the methodology doc open. Use plain English; gloss
+any technical term inline on first use, or replace with a plainer phrase.
+- **"Counterfactual"** — do NOT use the bare term. Also avoid jargon
+  paraphrases like "the model's no-war estimate" — these are still
+  technical. Prefer plain English that doesn't mention the model:
+  "below pre-war pace", "running short of normal for the period",
+  "materially weaker than in a normal year", or "noticeably below
+  pre-conflict norms". The technical term is fine in internal /
+  audit-trail fields but not in viewer-facing narrative or drivers.
+- **"Pre-war baseline"** — prefer "the November–December 2025 average"
+  or "the pre-conflict average" or "pre-war levels" depending on context.
+- **"Passthrough"** — prefer "pass-through into prices" or "downstream
+  price impact"; "passthrough" alone is fine if context makes the meaning
+  obvious (e.g. "near-total passthrough into refined products").
+- When a technical term is unavoidable, gloss it inline:
+  "tonnage 24% below counterfactual (the model's no-war estimate)".
+  But replacing with the plain phrase is preferred.
 
 ### Singapore monetary-policy framing — strict rule
 

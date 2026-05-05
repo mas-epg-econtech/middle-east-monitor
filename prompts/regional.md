@@ -132,7 +132,9 @@ The summary stats are pre-computed:
 - Don't speculate beyond what the dashboard shows.
 - No counterfactual speculation, no policy recommendations, no historical
   comparisons not visible in the data.
-- For shipping, use the `nowcast_pairs` actual-vs-counterfactual framing.
+- For shipping, use the `nowcast_pairs` actual-vs-no-war-estimate framing.
+  In the narrative itself, use plain language — see "Plain-language
+  guardrail" below.
 - Cross-country differences are valuable; country-by-country listing isn't.
   Aggregate where possible; spotlight specific countries where genuinely
   divergent.
@@ -146,7 +148,27 @@ The summary stats are pre-computed:
   reference to scoring rubrics leak internal mechanics the viewer has no
   context for. Just describe what the indicator is doing in plain
   market-analyst language ("FX moves remain narrow", "yields contained
-  within ±25 bp of baseline", etc.).
+  within ±25 bp of pre-war levels", etc.).
+
+### Plain-language guardrail — no bare jargon
+
+The viewer may not have the methodology doc open. Use plain English; gloss
+any technical term inline on first use, or replace with a plainer phrase.
+- **"Counterfactual"** — do NOT use the bare term. Also avoid jargon
+  paraphrases like "the model's no-war estimate" — these are still
+  technical. Prefer plain English that doesn't mention the model:
+  "below pre-war pace", "running short of normal for the period",
+  "materially weaker than in a normal year", or "noticeably below
+  pre-conflict norms". The technical term is fine in internal /
+  audit-trail fields but not in viewer-facing narrative or drivers.
+- **"Pre-war baseline"** — prefer "the November–December 2025 average"
+  or "the pre-conflict average" or "pre-war levels" depending on context.
+- **"Passthrough"** — prefer "pass-through into prices" or "downstream
+  price impact"; "passthrough" alone is fine if context makes the meaning
+  obvious.
+- When a technical term is unavoidable, gloss it inline:
+  "tonnage 36% below counterfactual (the model's no-war estimate)".
+  But replacing with the plain phrase is preferred.
 
 # User
 

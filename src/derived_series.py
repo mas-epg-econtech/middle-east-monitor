@@ -30,6 +30,17 @@ REGIONAL_COUNTRIES_ISO2 = ["CN", "IN", "ID", "JP", "MY", "PH", "KR", "TW", "TH",
 # data has 6 of the 7 typically-quoted ME suppliers (no Iran rows present).
 ME_SPOTLIGHT_ISO2 = ["AE", "SA", "QA", "KW", "IQ", "OM"]
 
+# 6 ME affected countries per the Hormuz-closure exposure rubric (reviewer's
+# spec, May 2026): the secondary-axis red line on the new partner-share
+# dual-axis chart aggregates these countries' shares per (SITC × period).
+# Same as ME_SPOTLIGHT_ISO2 plus Bahrain.
+ME_AFFECTED_ISO2 = ["KW", "IQ", "QA", "BH", "SA", "AE"]
+
+# Number of top partners to compute share series for (per SITC, ranked by
+# 2025 annual share). The shown set is top-N ∪ ME_AFFECTED_ISO2 — so we
+# always render the 6 ME countries even when one falls out of the top 10.
+SG_IMPORT_TOP_N_PARTNERS = 10
+
 # SITC codes from the SG_Annual_Imports / SG_Monthly_Imports tabs that get
 # their own row on the Singapore Trade Exposure tab — chapter, 3-digit
 # divisions, plus the 7-digit SingStat sub-codes that the colleagues
@@ -194,6 +205,18 @@ def compute_singstat_petroleum_export_country_series(conn: sqlite3.Connection) -
         product_code="SITC_334",
         series_prefix="singstat_petroleum_export",
         product_human="refined petroleum",
+    )
+
+
+def compute_singstat_totaloil_export_country_series(conn: sqlite3.Connection) -> int:
+    """Per-country total-oil (SITC 3, full mineral-fuels chapter) export
+    series. Sourced from the SG_TotalOil_DX SingStat sheet (parsed into
+    `trade_singstat.product_code = 'SITC_3'` with `flow = 'Exports'`)."""
+    return _compute_singstat_export_country_series(
+        conn,
+        product_code="SITC_3",
+        series_prefix="singstat_totaloil_export",
+        product_human="total oil (mineral fuels chapter)",
     )
 
 
@@ -405,43 +428,127 @@ def compute_sg_import_monthly_aggregates(conn: sqlite3.Connection) -> int:
     return len(out_rows)
 
 
-def compute_sg_chem_export_regional_shares(conn: sqlite3.Connection) -> int:
-    """Annual regional shares of SG industrial-chemical exports
-    (SITC 5 less 51 less 54).
+def compute_sg_import_partner_shares_v2(conn: sqlite3.Connection) -> int:
+    """v2 partner-share computation for the new dual-axis Singapore Trade
+    Exposure chart (May 2026 reviewer rework).
 
-    Output series: sg_chem_export_share_<iso2_lower>, annual data points.
-    Used by Section 3 of the Singapore Trade tab.
+    Differences vs the original `compute_sg_import_annual_shares` +
+    `compute_sg_import_monthly_aggregates`:
+
+      - Shown partner set per SITC = top-N by 2025 annual share UNION
+        the 6 ME affected countries (so the red secondary-axis line
+        always reflects the same series displayed in the stack).
+      - Both annual (2023-2025) and monthly (every available month from
+        2025-01 forward) are emitted into a single partner-share namespace,
+        all as `% share` of total SG imports of that SITC for that period.
+      - Adds a derived `_me_affected` aggregate per SITC × period — the
+        sum of the 6 ME affected countries' shares — for the secondary-
+        axis line on the new chart.
+      - "Others" residual = 100 - sum of all SHOWN partners (top-N ∪ ME
+        affected). Different from the legacy compute because the shown
+        set is broader.
+
+    Output series per SITC (sitc lowercased, e.g. `sitc_333`):
+      `sg_imp_pshare_<sitc>_<iso2>`        for each shown partner
+      `sg_imp_pshare_<sitc>_others`        residual (100 - sum_shown)
+      `sg_imp_pshare_<sitc>_me_affected`   sum of 6 ME affected countries
+
+    Series carry both Annual (2023-12-31, 2024-12-31, 2025-12-31) and
+    Monthly (2025-01-01 through latest) data points so the chart
+    builder can pull them off one query per series.
+
+    The chart-builder synthesises the "Jan-Feb pre-war avg" bar at
+    render time from these monthly points — no separate stored series.
     """
-    _wipe_series_prefix(conn, "sg_chem_export_share_")
-    out_rows = []
-    years = [2023, 2024, 2025]
+    _wipe_series_prefix(conn, "sg_imp_pshare_")
 
-    for year in years:
-        period = f"{year}-12-31"
-        r = conn.execute(
-            "SELECT SUM(value_sgd_thou) FROM trade_singstat "
-            "WHERE flow='Exports' AND product_code='SITC_5_excl_51_54' "
-            "AND frequency='Annual' AND period=?",
-            (period,),
-        ).fetchone()
-        total = r[0] if r and r[0] else None
-        if not total or total <= 0:
-            continue
-        for iso2 in REGIONAL_COUNTRIES_ISO2:
-            pr = conn.execute(
-                "SELECT value_sgd_thou, partner_display FROM trade_singstat "
-                "WHERE flow='Exports' AND product_code='SITC_5_excl_51_54' "
-                "AND frequency='Annual' AND period=? AND partner_iso2=?",
-                (period, iso2),
+    out_rows: list[tuple] = []
+    annual_periods = ["2023-12-31", "2024-12-31", "2025-12-31"]
+
+    for sitc_code in SG_IMPORT_SITC_CODES:
+        sitc_low = sitc_code.lower()
+        sitc_label = SG_IMPORT_SITC_LABELS.get(sitc_code, sitc_code)
+
+        # Step 1 — identify shown partners: top-N by 2025 annual share +
+        # always include the 6 ME affected countries (in case any one
+        # of them is below the top-N threshold).
+        top_rows = conn.execute(
+            "SELECT partner_iso2 FROM trade_singstat "
+            "WHERE flow='Imports' AND product_code=? AND frequency='Annual' "
+            "      AND period='2025-12-31' AND partner_iso2 IS NOT NULL "
+            "ORDER BY value_sgd_thou DESC LIMIT ?",
+            (sitc_code, SG_IMPORT_TOP_N_PARTNERS),
+        ).fetchall()
+        top_iso2 = [r[0] for r in top_rows]
+        # Union (preserve top-N order, then append ME-affected not already in top-N)
+        shown_iso2: list[str] = list(top_iso2)
+        for me_iso2 in ME_AFFECTED_ISO2:
+            if me_iso2 not in shown_iso2:
+                shown_iso2.append(me_iso2)
+
+        # Step 2 — collect every period (annual + monthly) we need to
+        # compute shares for.
+        monthly_periods = [
+            r[0] for r in conn.execute(
+                "SELECT DISTINCT period FROM trade_singstat "
+                "WHERE flow='Imports' AND product_code=? AND frequency='Monthly' "
+                "  AND period >= '2025-01-01' "
+                "ORDER BY period",
+                (sitc_code,),
+            ).fetchall()
+        ]
+        periods_with_freq = (
+            [(p, "Annual")  for p in annual_periods] +
+            [(p, "Monthly") for p in monthly_periods]
+        )
+
+        for period, freq in periods_with_freq:
+            # Per-period denominator
+            r = conn.execute(
+                "SELECT SUM(value_sgd_thou) FROM trade_singstat "
+                "WHERE flow='Imports' AND product_code=? AND frequency=? "
+                "      AND period=?",
+                (sitc_code, freq, period),
             ).fetchone()
-            if not pr or pr[0] is None:
+            total = r[0] if r and r[0] else None
+            if not total or total <= 0:
                 continue
-            share_pct = float(pr[0]) / float(total) * 100.0
-            series_id = f"sg_chem_export_share_{iso2.lower()}"
-            series_name = f"{pr[1]} share of SG industrial-chemical exports"
+
+            # Per-shown-partner share + accumulate for ME affected & Others
+            sum_shown_share = 0.0
+            sum_me_affected_share = 0.0
+            for iso2 in shown_iso2:
+                pr = conn.execute(
+                    "SELECT value_sgd_thou FROM trade_singstat "
+                    "WHERE flow='Imports' AND product_code=? AND frequency=? "
+                    "      AND period=? AND partner_iso2=?",
+                    (sitc_code, freq, period, iso2),
+                ).fetchone()
+                value = float(pr[0]) if pr and pr[0] is not None else 0.0
+                share_pct = (value / float(total)) * 100.0
+                sum_shown_share += share_pct
+                if iso2 in ME_AFFECTED_ISO2:
+                    sum_me_affected_share += share_pct
+                series_id = f"sg_imp_pshare_{sitc_low}_{iso2.lower()}"
+                out_rows.append((
+                    period, share_pct, series_id,
+                    f"SG {sitc_label} imports — share from {iso2}",
+                    "singstat", "% share", freq,
+                ))
+
+            # Others residual = 100 - sum of all shown partners
+            others_share = max(0.0, 100.0 - sum_shown_share)
             out_rows.append((
-                period, share_pct, series_id, series_name,
-                "singstat", "% share", "Annual",
+                period, others_share, f"sg_imp_pshare_{sitc_low}_others",
+                f"SG {sitc_label} imports — share from non-shown partners",
+                "singstat", "% share", freq,
+            ))
+
+            # ME-affected aggregate (always-6 sum, used by secondary-axis line)
+            out_rows.append((
+                period, sum_me_affected_share, f"sg_imp_pshare_{sitc_low}_me_affected",
+                f"SG {sitc_label} imports — share from 6 ME affected countries",
+                "singstat", "% share", freq,
             ))
 
     if out_rows:
@@ -452,6 +559,318 @@ def compute_sg_chem_export_regional_shares(conn: sqlite3.Connection) -> int:
             out_rows,
         )
         conn.commit()
+    return len(out_rows)
+
+
+def compute_regional_ipi_index_levels(conn: sqlite3.Connection) -> int:
+    """Rebase the regional level-IPI series to a common 2025=100 scale.
+
+    Each country publishes its IPI on a different base year (India 2011-12,
+    Indonesia 2010, Japan 2020, Korea 2020, Malaysia 2015, Philippines 2018,
+    Taiwan/Thailand 2021, Vietnam 2015) — incomparable across countries
+    as published. Rebasing to a common 2025=100 puts them on the same
+    scale and aligns visually with Singapore Sectoral IPI ("Index 2025=100").
+
+    For each country:
+      1. Try `regional_ipi_level_<iso2>` (fetched from CEIC).
+      2. If that's missing OR has no 2025 data, fall back to chain-
+         reconstruction from `regional_ipi_<iso2>` (YoY %). Used for
+         China specifically — NBS publishes VAI as YoY only, no
+         continuous level index exists.
+      3. Rebase: divide by the country's 2025 monthly average × 100.
+
+    Output series:
+      `regional_ipi_index_<iso2>`  Monthly, unit "Index (2025=100)"
+
+    Reconstruction method (when falling back):
+      Anchor: first 12 months of YoY data set to level=100 each.
+      Chain: level_t = level_{t-12} × (1 + YoY_t/100) for t after anchor.
+      Rebase: as above.
+    The within-year seasonal pattern starts flat in the anchor year
+    and builds as YoY values diverge — by 2021+ (the dashboard window)
+    the recent pattern is reasonably faithful.
+    """
+    from datetime import datetime
+    _wipe_series_prefix(conn, "regional_ipi_index_")
+
+    out_rows: list[tuple] = []
+    iso2_list = [iso.lower() for iso in REGIONAL_COUNTRIES_ISO2]
+
+    def _fetch(series_id: str) -> list[tuple[str, float]]:
+        return [
+            (r[0], float(r[1])) for r in conn.execute(
+                "SELECT date, value FROM time_series "
+                "WHERE series_id=? AND value IS NOT NULL ORDER BY date",
+                (series_id,),
+            ).fetchall()
+        ]
+
+    for iso2 in iso2_list:
+        # ── Path A: fresh level data fetched from CEIC ──
+        level_rows = _fetch(f"regional_ipi_level_{iso2}")
+        provenance = "ceic"
+
+        # ── Path B fallback: chain-reconstruct from YoY ──
+        if not level_rows:
+            yoy_rows = _fetch(f"regional_ipi_{iso2}")
+            if not yoy_rows:
+                continue
+            yoy = dict(yoy_rows)
+            dates_sorted = sorted(yoy)
+            first = datetime.strptime(dates_sorted[0], "%Y-%m-%d")
+            last  = datetime.strptime(dates_sorted[-1], "%Y-%m-%d")
+
+            # Build a continuous month sequence from earliest YoY date
+            months: list[str] = []
+            y, m = first.year, first.month
+            while True:
+                months.append(f"{y:04d}-{m:02d}-01")
+                if y == last.year and m == last.month:
+                    break
+                m += 1
+                if m == 13:
+                    m = 1; y += 1
+
+            levels: dict[str, float] = {}
+            for i, d in enumerate(months):
+                if i < 12:
+                    levels[d] = 100.0
+                    continue
+                d_minus_12 = months[i - 12]
+                prev = levels.get(d_minus_12)
+                if prev is None:
+                    continue
+                yoy_t = yoy.get(d)
+                if yoy_t is None:
+                    levels[d] = prev   # carry forward when YoY missing
+                else:
+                    levels[d] = prev * (1.0 + yoy_t / 100.0)
+            # Only keep months for which we both have a level AND an
+            # underlying YoY observation (no synthetic carry-forward
+            # leaking into the published series).
+            level_rows = [(d, v) for d, v in levels.items() if d in yoy]
+            level_rows.sort()
+            provenance = "derived (CEIC YoY chain)"
+
+        # Rebase to 2025 monthly average = 100
+        vals_2025 = [v for d, v in level_rows if d.startswith("2025-")]
+        if not vals_2025:
+            vals_2024 = [v for d, v in level_rows if d.startswith("2024-")]
+            if not vals_2024:
+                continue
+            scale = sum(vals_2024) / len(vals_2024)
+        else:
+            scale = sum(vals_2025) / len(vals_2025)
+        if scale <= 0:
+            continue
+
+        for d, v in level_rows:
+            out_rows.append((
+                d, v / scale * 100.0,
+                f"regional_ipi_index_{iso2}",
+                f"{iso2.upper()} Industrial Production",
+                provenance, "Index (2025=100)", "Monthly",
+            ))
+
+    if out_rows:
+        conn.executemany(
+            "INSERT OR REPLACE INTO time_series "
+            "(date, value, series_id, series_name, source, unit, frequency, category) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, NULL)",
+            out_rows,
+        )
+        conn.commit()
+    return len(out_rows)
+
+
+def _compute_sg_export_regional_shares(
+    conn: sqlite3.Connection,
+    *,
+    product_code: str,
+    series_prefix: str,
+    product_human: str,
+) -> int:
+    """Generic helper: compute annual regional shares of SG exports for one
+    product. Emits `<series_prefix>_share_<iso2>` per regional country plus
+    `<series_prefix>_share_others` (residual = 100 − sum of regional shares).
+    Used by chemical, refined-petroleum, and total-oil export sections.
+    """
+    _wipe_series_prefix(conn, f"{series_prefix}_share_")
+    out_rows: list[tuple] = []
+    years = [2023, 2024, 2025]
+
+    for year in years:
+        period = f"{year}-12-31"
+        r = conn.execute(
+            "SELECT SUM(value_sgd_thou) FROM trade_singstat "
+            "WHERE flow='Exports' AND product_code=? AND frequency='Annual' "
+            "      AND period=?",
+            (product_code, period),
+        ).fetchone()
+        total = r[0] if r and r[0] else None
+        if not total or total <= 0:
+            continue
+        sum_regional_share = 0.0
+        for iso2 in REGIONAL_COUNTRIES_ISO2:
+            pr = conn.execute(
+                "SELECT value_sgd_thou, partner_display FROM trade_singstat "
+                "WHERE flow='Exports' AND product_code=? AND frequency='Annual' "
+                "      AND period=? AND partner_iso2=?",
+                (product_code, period, iso2),
+            ).fetchone()
+            if not pr or pr[0] is None:
+                continue
+            share_pct = float(pr[0]) / float(total) * 100.0
+            sum_regional_share += share_pct
+            sid = f"{series_prefix}_share_{iso2.lower()}"
+            out_rows.append((
+                period, share_pct, sid,
+                f"{pr[1]} share of SG {product_human} exports",
+                "singstat", "% share", "Annual",
+            ))
+        # Residual so the stacked-shares chart sums to 100%.
+        others_share = max(0.0, 100.0 - sum_regional_share)
+        out_rows.append((
+            period, others_share, f"{series_prefix}_share_others",
+            f"Non-regional destinations (Others) share of SG {product_human} exports",
+            "singstat", "% share", "Annual",
+        ))
+
+    if out_rows:
+        conn.executemany(
+            "INSERT OR REPLACE INTO time_series "
+            "(date, value, series_id, series_name, source, unit, frequency, category) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, NULL)",
+            out_rows,
+        )
+        conn.commit()
+    return len(out_rows)
+
+
+def compute_sg_chem_export_regional_shares(conn: sqlite3.Connection) -> int:
+    """Annual regional shares of SG industrial-chemical exports
+    (SITC 5 less 51 less 54). Used by Section 3 of the Singapore Trade tab."""
+    return _compute_sg_export_regional_shares(
+        conn,
+        product_code="SITC_5_excl_51_54",
+        series_prefix="sg_chem_export",
+        product_human="industrial-chemical",
+    )
+
+
+def compute_sg_petroleum_export_regional_shares(conn: sqlite3.Connection) -> int:
+    """Annual regional shares of SG refined-petroleum (SITC 334) exports."""
+    return _compute_sg_export_regional_shares(
+        conn,
+        product_code="SITC_334",
+        series_prefix="sg_petroleum_export",
+        product_human="refined-petroleum",
+    )
+
+
+def compute_sg_totaloil_export_regional_shares(conn: sqlite3.Connection) -> int:
+    """Annual regional shares of SG total-oil (SITC 3) exports."""
+    return _compute_sg_export_regional_shares(
+        conn,
+        product_code="SITC_3",
+        series_prefix="sg_totaloil_export",
+        product_human="total-oil",
+    )
+
+
+def _compute_sg_export_monthly_aggregates(
+    conn: sqlite3.Connection,
+    *,
+    product_code: str,
+    series_prefix: str,
+    product_human: str,
+    per_country_monthly_prefix: str,
+) -> int:
+    """Generic helper: compute monthly aggregate SG exports for one product.
+    Emits Total / Regional / Others monthly series + benchmarks.
+
+    `per_country_monthly_prefix` is the prefix of the per-country monthly
+    series (e.g. `singstat_chem_export_monthly` or
+    `singstat_petroleum_export_monthly`) that the stacked-levels chart
+    consumes — we attach the total-exports monthly average to each per-
+    country series_id so the renderer's auto-attach loop picks it up
+    regardless of which series_id it iterates first.
+    """
+    _wipe_series_prefix(conn, f"{series_prefix}_monthly_")
+    out_rows: list[tuple] = []
+    totals: dict[str, float] = {}
+    regional: dict[str, float] = {}
+
+    for r in conn.execute(
+        "SELECT period, SUM(value_sgd_thou) FROM trade_singstat "
+        "WHERE flow='Exports' AND product_code=? AND frequency='Monthly' "
+        "GROUP BY period ORDER BY period",
+        (product_code,),
+    ).fetchall():
+        if r[1] is not None:
+            totals[r[0]] = float(r[1])
+            out_rows.append((
+                r[0], float(r[1]),
+                f"{series_prefix}_monthly_total",
+                f"SG {product_human} exports — Total (all destinations)",
+                "singstat", "SGD Thousand", "Monthly",
+            ))
+
+    placeholders = ",".join("?" for _ in REGIONAL_COUNTRIES_ISO2)
+    for r in conn.execute(
+        f"SELECT period, SUM(value_sgd_thou) FROM trade_singstat "
+        f"WHERE flow='Exports' AND product_code=? AND frequency='Monthly' "
+        f"      AND partner_iso2 IN ({placeholders}) "
+        f"GROUP BY period ORDER BY period",
+        (product_code, *REGIONAL_COUNTRIES_ISO2),
+    ).fetchall():
+        if r[1] is not None:
+            regional[r[0]] = float(r[1])
+            out_rows.append((
+                r[0], float(r[1]),
+                f"{series_prefix}_monthly_regional",
+                f"SG {product_human} exports — Regional aggregate (10 Asian economies)",
+                "singstat", "SGD Thousand", "Monthly",
+            ))
+
+    for period, total in totals.items():
+        others = total - regional.get(period, 0.0)
+        out_rows.append((
+            period, max(others, 0.0),
+            f"{series_prefix}_monthly_others",
+            f"SG {product_human} exports — Other destinations (non-regional)",
+            "singstat", "SGD Thousand", "Monthly",
+        ))
+
+    if out_rows:
+        conn.executemany(
+            "INSERT OR REPLACE INTO time_series "
+            "(date, value, series_id, series_name, source, unit, frequency, category) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, NULL)",
+            out_rows,
+        )
+
+    # Benchmark — 2023-25 monthly average of total exports, attached to
+    # every per-country series_id so the stacked-levels chart's auto-
+    # benchmark loop picks it up regardless of which series_id it sees first.
+    annual_totals = [
+        row[1] for row in conn.execute(
+            "SELECT period, SUM(value_sgd_thou) FROM trade_singstat "
+            "WHERE flow='Exports' AND product_code=? AND frequency='Annual' "
+            "GROUP BY period",
+            (product_code,),
+        ).fetchall() if row[1] is not None
+    ]
+    if annual_totals:
+        total_monthly_avg = sum(annual_totals) / len(annual_totals) / 12.0
+        for iso2 in REGIONAL_COUNTRIES_ISO2:
+            _stash_benchmark(
+                conn, f"{per_country_monthly_prefix}_{iso2.lower()}",
+                total_monthly_avg,
+            )
+        _stash_benchmark(conn, f"{series_prefix}_monthly_others", total_monthly_avg)
+
+    conn.commit()
     return len(out_rows)
 
 
@@ -466,114 +885,35 @@ def compute_sg_chem_export_monthly_aggregates(conn: sqlite3.Connection) -> int:
     Plus 2023-25 monthly-average benchmarks in metadata.
     Used by Section 4 of the Singapore Trade tab.
     """
-    _wipe_series_prefix(conn, "sg_chem_export_monthly_")
-    out_rows = []
+    return _compute_sg_export_monthly_aggregates(
+        conn,
+        product_code="SITC_5_excl_51_54",
+        series_prefix="sg_chem_export",
+        product_human="industrial-chemical",
+        per_country_monthly_prefix="singstat_chem_export_monthly",
+    )
 
-    # Build {period: total} and {period: regional_sum} so we can also emit
-    # an Others series (= total - regional) for the stacked levels chart.
-    totals: dict[str, float] = {}
-    regional: dict[str, float] = {}
 
-    for r in conn.execute(
-        "SELECT period, SUM(value_sgd_thou) FROM trade_singstat "
-        "WHERE flow='Exports' AND product_code='SITC_5_excl_51_54' "
-        "AND frequency='Monthly' GROUP BY period ORDER BY period"
-    ).fetchall():
-        if r[1] is not None:
-            totals[r[0]] = float(r[1])
-            out_rows.append((
-                r[0], float(r[1]),
-                "sg_chem_export_monthly_total",
-                "SG industrial-chemical exports — Total (all destinations)",
-                "singstat", "SGD Thousand", "Monthly",
-            ))
+def compute_sg_petroleum_export_monthly_aggregates(conn: sqlite3.Connection) -> int:
+    """Monthly aggregate SG refined-petroleum (SITC 334) exports."""
+    return _compute_sg_export_monthly_aggregates(
+        conn,
+        product_code="SITC_334",
+        series_prefix="sg_petroleum_export",
+        product_human="refined-petroleum",
+        per_country_monthly_prefix="singstat_petroleum_export_monthly",
+    )
 
-    placeholders = ",".join("?" for _ in REGIONAL_COUNTRIES_ISO2)
-    for r in conn.execute(
-        f"SELECT period, SUM(value_sgd_thou) FROM trade_singstat "
-        f"WHERE flow='Exports' AND product_code='SITC_5_excl_51_54' "
-        f"AND frequency='Monthly' AND partner_iso2 IN ({placeholders}) "
-        f"GROUP BY period ORDER BY period",
-        REGIONAL_COUNTRIES_ISO2,
-    ).fetchall():
-        if r[1] is not None:
-            regional[r[0]] = float(r[1])
-            out_rows.append((
-                r[0], float(r[1]),
-                "sg_chem_export_monthly_regional",
-                "SG industrial-chemical exports — Regional aggregate (10 Asian economies)",
-                "singstat", "SGD Thousand", "Monthly",
-            ))
 
-    # Others = total - regional. Emit per-period so the stacked monthly
-    # levels chart sums to the all-destinations total.
-    for period, total in totals.items():
-        others = total - regional.get(period, 0.0)
-        out_rows.append((
-            period, max(others, 0.0),
-            "sg_chem_export_monthly_others",
-            "SG industrial-chemical exports — Other destinations (non-regional)",
-            "singstat", "SGD Thousand", "Monthly",
-        ))
-
-    if out_rows:
-        conn.executemany(
-            "INSERT OR REPLACE INTO time_series "
-            "(date, value, series_id, series_name, source, unit, frequency, category) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, NULL)",
-            out_rows,
-        )
-
-    for series_id, where_partners in (
-        ("sg_chem_export_monthly_total",    None),
-        ("sg_chem_export_monthly_regional", REGIONAL_COUNTRIES_ISO2),
-    ):
-        if where_partners:
-            ph = ",".join("?" for _ in where_partners)
-            sql = (
-                f"SELECT period, SUM(value_sgd_thou) FROM trade_singstat "
-                f"WHERE flow='Exports' AND product_code='SITC_5_excl_51_54' "
-                f"AND frequency='Annual' AND partner_iso2 IN ({ph}) GROUP BY period"
-            )
-            params = where_partners
-        else:
-            sql = (
-                "SELECT period, SUM(value_sgd_thou) FROM trade_singstat "
-                "WHERE flow='Exports' AND product_code='SITC_5_excl_51_54' "
-                "AND frequency='Annual' GROUP BY period"
-            )
-            params = ()
-        annuals = [row[1] for row in conn.execute(sql, params).fetchall() if row[1] is not None]
-        if annuals:
-            _stash_benchmark(conn, series_id, sum(annuals) / len(annuals) / 12.0)
-
-    # ── Stacked monthly levels chart benchmark ───────────────────────────
-    # The combined-card export levels chart sums 10 per-country series +
-    # Others; the visually meaningful benchmark on a stacked chart is the
-    # 2023-25 monthly average of the TOTAL exports. The renderer's auto-
-    # attach loop iterates the chart's series_ids and uses the first one
-    # with a stashed benchmark — so we duplicate the *total* benchmark
-    # under each constituent series_id of the stacked levels chart so it
-    # gets picked up regardless of iteration order.
-    annual_totals = [
-        row[1] for row in conn.execute(
-            "SELECT period, SUM(value_sgd_thou) FROM trade_singstat "
-            "WHERE flow='Exports' AND product_code='SITC_5_excl_51_54' "
-            "AND frequency='Annual' GROUP BY period"
-        ).fetchall() if row[1] is not None
-    ]
-    if annual_totals:
-        total_monthly_avg = sum(annual_totals) / len(annual_totals) / 12.0
-        # Per-country monthly export series (10 regional countries) + Others.
-        for iso2 in REGIONAL_COUNTRIES_ISO2:
-            _stash_benchmark(
-                conn, f"singstat_chem_export_monthly_{iso2.lower()}",
-                total_monthly_avg,
-            )
-        _stash_benchmark(conn, "sg_chem_export_monthly_others", total_monthly_avg)
-
-    conn.commit()
-    return len(out_rows)
+def compute_sg_totaloil_export_monthly_aggregates(conn: sqlite3.Connection) -> int:
+    """Monthly aggregate SG total-oil (SITC 3) exports."""
+    return _compute_sg_export_monthly_aggregates(
+        conn,
+        product_code="SITC_3",
+        series_prefix="sg_totaloil_export",
+        product_human="total-oil",
+        per_country_monthly_prefix="singstat_totaloil_export_monthly",
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════

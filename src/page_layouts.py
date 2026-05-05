@@ -215,13 +215,12 @@ PAGES = {
                                 "title": "Prices",
                                 "description": (
                                     "Singapore retail fuel prices, headline and core inflation, plus the "
-                                    "domestic supply / import / export / producer price indices that capture "
-                                    "where energy cost shocks are showing up in the price level."
+                                    "domestic supply / import / export / producer price indices."
                                 ),
                                 "nodes": [
                                     {
                                         "label": "Retail fuel prices (monthly)",
-                                        "description": "Monthly retail prices for the three petrol grades plus diesel — official SingStat survey series. Direct passthrough from upstream crude and refined-product price moves.",
+                                        "description": "Monthly retail prices for the three petrol grades plus diesel — official SingStat survey series.",
                                         "series": [
                                             "singstat_petrol_92",
                                             "singstat_petrol_95",
@@ -231,7 +230,7 @@ PAGES = {
                                     },
                                     {
                                         "label": "Pump prices (daily)",
-                                        "description": "Daily pump-station prices scraped across grades and brands. Higher-frequency complement to the monthly survey above; useful for catching rapid passthrough during oil-price shocks.",
+                                        "description": "Daily pump-station prices scraped across grades and brands.",
                                         "series": [
                                             "motorist_92",
                                             "motorist_95",
@@ -242,17 +241,17 @@ PAGES = {
                                     },
                                     {
                                         "label": "Electricity tariff (households)",
-                                        "description": "Low-tension domestic tariff. Singapore power runs almost entirely on imported gas, so this tracks LNG and pipeline-gas prices with a lag — the household-facing channel for Middle East gas disruption.",
+                                        "description": "Low-tension domestic tariff.",
                                         "series": ["singstat_electricity_tariff"],
                                     },
                                     {
                                         "label": "Headline and core CPI (year-on-year)",
-                                        "description": "Year-on-year change in headline CPI and MAS Core inflation (which strips out accommodation and private-transport costs). Broadest measure of how energy and imported-input cost shocks reach households.",
+                                        "description": "Year-on-year change in headline CPI and MAS Core inflation (which strips out accommodation and private-transport costs).",
                                         "series": ["ceic_cpi_yoy", "ceic_mas_core_inflation"],
                                     },
                                     {
                                         "label": "Headline and core CPI (month-on-month)",
-                                        "description": "Same headline and core inflation series, month-on-month — captures price-momentum shifts that the year-on-year series smooths over.",
+                                        "description": "Same headline and core inflation series, month-on-month.",
                                         "series": ["ceic_cpi_mom", "mas_core_inflation_mom"],
                                     },
                                     "sg_supply_prices",      # Domestic supply price indices (oil/non-oil)
@@ -280,22 +279,22 @@ PAGES = {
                                     # ── Refining & chemicals (production) ──
                                     {
                                         "label": "Petroleum refining",
-                                        "description": "Index of industrial production for refinery throughput. Directly hit by crude-oil cost shocks — a key transmission channel for Middle East disruption into downstream chemicals and bunker fuels.",
+                                        "description": "Index of industrial production for refinery throughput.",
                                         "series": ["ipi_petroleum"],
                                     },
                                     {
                                         "label": "Petrochemicals",
-                                        "description": "Industrial production for the Jurong Island petrochemicals complex. Naphtha and LPG feedstocks are highly sensitive to Middle East crude flows — cracker margins compress quickly when feedstock prices spike.",
+                                        "description": "Industrial production for the Jurong Island petrochemicals complex.",
                                         "series": ["ipi_petrochemicals"],
                                     },
                                     {
                                         "label": "Specialty and other chemicals",
-                                        "description": "Industrial production for specialty (paints, coatings, adhesives) and other basic chemicals. Both downstream of crude/naphtha — capture feedstock cost pressure through the chemicals chain.",
+                                        "description": "Industrial production for specialty (paints, coatings, adhesives) and other basic chemicals.",
                                         "series": ["ipi_specialty_chemicals", "ipi_other_chemicals"],
                                     },
                                     {
                                         "label": "Wholesale trade",
-                                        "description": "Foreign Wholesale Trade Index — overall plus petroleum, chemicals, and ship-chandlers/bunkering subsectors. Direct gauge of how upstream cost shocks pass through to wholesale activity at the Port of Singapore.",
+                                        "description": "Foreign Wholesale Trade Index — overall plus petroleum, chemicals, and ship-chandlers/bunkering subsectors.",
                                         "series": [
                                             "fwti_overall",
                                             "fwti_petroleum",
@@ -306,49 +305,49 @@ PAGES = {
                                     # ── Transport (Jan-2025 min date applied via data_min_date) ──
                                     {
                                         "label": "Sea cargo handled",
-                                        "description": "Total sea cargo handled at the Port of Singapore (thousand tons). Volume signal for seaborne trade flows through the Strait of Singapore — sensitive to bunker-fuel costs and any rerouting around Hormuz.",
+                                        "description": "Total sea cargo handled at the Port of Singapore (thousand tons).",
                                         "series": ["sea_cargo_handled"],
                                         "data_min_date": "2025-01-01",
                                     },
                                     {
                                         "label": "Container throughput",
-                                        "description": "Container throughput at Singapore port (thousand TEU). Real-time gauge of containerised trade flow — captures the broader downstream impact of energy-price shocks on global supply chains.",
+                                        "description": "Container throughput at Singapore port (thousand TEU).",
                                         "series": ["container_throughput"],
                                         "data_min_date": "2025-01-01",
                                     },
                                     {
                                         "label": "Changi Airport flight movements",
-                                        "description": "Monthly count of aircraft movements at Changi. Sensitive to jet-fuel cost shocks via airline capacity decisions and to broader travel-demand impacts of regional conflict.",
+                                        "description": "Monthly count of aircraft movements at Changi.",
                                         "series": ["air_flight_movements"],
                                         "data_min_date": "2025-01-01",
                                     },
                                     {
                                         "label": "Changi Airport passenger movements",
-                                        "description": "Monthly passenger throughput at Changi. Tracks the consumer-travel side of aviation demand — a leading signal for regional service-sector activity.",
+                                        "description": "Monthly passenger throughput at Changi.",
                                         "series": ["air_passenger_movements"],
                                         "data_min_date": "2025-01-01",
                                     },
                                     {
                                         "label": "Changi Airport air freight",
-                                        "description": "Monthly air-freight tonnage handled at Changi. High-value, time-sensitive cargo channel — first place jet-fuel cost spikes show up in shipping logistics.",
+                                        "description": "Monthly air-freight tonnage handled at Changi.",
                                         "series": ["air_freight_movements"],
                                         "data_min_date": "2025-01-01",
                                     },
                                     {
                                         "label": "Cross-border land arrivals",
-                                        "description": "Visitor arrivals into Singapore by land. Proxy for road-transport activity across the Causeway and Second Link — sensitive to retail-fuel cost moves and broader regional travel demand.",
+                                        "description": "Visitor arrivals into Singapore by land.",
                                         "series": ["visitor_arrival_land"],
                                         "data_min_date": "2025-01-01",
                                     },
                                     # ── Downstream ──
                                     {
                                         "label": "Construction contracts awarded",
-                                        "description": "Monthly value of contracts awarded, public and private. Leading indicator of the building-project pipeline; slow to react to cost shocks since procurement reflects locked-in input prices.",
+                                        "description": "Monthly value of contracts awarded, public and private.",
                                         "series": ["singstat_construction_contracts"],
                                     },
                                     {
                                         "label": "Construction material demand",
-                                        "description": "Monthly physical-volume demand for cement, steel bars, and granite. Cement and steel are energy-intensive to produce, so their demand reflects how upstream cost pressure feeds into building activity.",
+                                        "description": "Monthly physical-volume demand for cement, steel bars, and granite.",
                                         "series": [
                                             "ceic_constr_demand_cement",
                                             "ceic_constr_demand_steel",
@@ -357,17 +356,17 @@ PAGES = {
                                     },
                                     {
                                         "label": "Private property price index",
-                                        "description": "URA quarterly benchmark for non-HDB housing prices. Slow-moving channel for input-cost pressure via construction and utility costs; useful for spotting whether upstream shocks are reaching property markets.",
+                                        "description": "URA quarterly benchmark for non-HDB housing prices.",
                                         "series": ["ceic_property_price_index"],
                                     },
                                     {
                                         "label": "Property deals (developer sales + resales)",
-                                        "description": "URA monthly count of private residential transactions. Higher-frequency proxy for buyer activity than the price index; sensitive to broader risk sentiment during conflict episodes.",
+                                        "description": "URA monthly count of private residential transactions.",
                                         "series": ["ceic_residential_transactions"],
                                     },
                                     {
                                         "label": "Food and beverage services",
-                                        "description": "F&B Services Index — overall plus five segments (restaurants, fast food, caterers, food courts, cafes). Tracks how imported food-input cost pressure reaches consumer-facing F&B.",
+                                        "description": "F&B Services Index — overall plus five segments (restaurants, fast food, caterers, food courts, cafes).",
                                         "series": [
                                             "fb_overall",
                                             "fb_restaurants",
@@ -387,82 +386,108 @@ PAGES = {
                         "label": "Trade Exposure",
                         "hide_date_range": True,    # bar charts; zoom selector irrelevant
                         "subsections": [
-                            # ── Mineral fuel imports — Middle East exposure by SITC
-                            # One wide card per SITC. Each card has two
-                            # side-by-side sub-charts: annual ME shares
-                            # (left, bars NOT summing to 100% — each
-                            # segment is a single ME-spotlight country's %)
-                            # and monthly stacked levels (right, bars stack
-                            # to SG total).
+                            # ── Mineral fuel imports — partner-share dual-axis grid
+                            # One parent section header + 6 SITC cards (one per
+                            # SITC code). Each card is a 100%-stacked bar by
+                            # top trading partners over a mixed annual+monthly
+                            # x-axis, with a red line on the secondary axis
+                            # tracking the total share of the 6 affected ME
+                            # countries (UAE, Saudi Arabia, Qatar, Iraq, Kuwait,
+                            # Bahrain). Defined once in the section description
+                            # so card titles can stay short.
                             {
-                                "type": "chart_grid",
-                                "title": "Mineral fuel imports — Middle East exposure by category",
+                                "type":         "partner_share_grid",
+                                "title":        "Mineral fuel imports — Singapore import market share by partner",
                                 "description": (
-                                    "How dependent Singapore is on Middle East suppliers — UAE, "
-                                    "Saudi Arabia, Qatar, Kuwait, Iraq, and Oman — for each mineral-fuel "
-                                    "category. Iran does not appear in the data because of sanctions. Each "
-                                    "card pairs annual Middle East import shares (left) with monthly stacked "
-                                    "import levels (right)."
+                                    "Each card shows Singapore's import market share by partner "
+                                    "country (left axis, 100% stacked bars), with a red line on "
+                                    "the right axis tracking the total share of the six affected "
+                                    "Middle East countries: UAE, Saudi Arabia, Qatar, Iraq, "
+                                    "Kuwait, Bahrain. Periods include annual averages (2023–2025) "
+                                    "and recent monthly snapshots, with a pre-war Jan–Feb 2026 "
+                                    "average for direct comparison against post-war months."
                                 ),
-                                "columns": 1,    # one wide card per row
-                                "single_legend": True,   # one legend per card across left+right charts
-                                "nodes": [
+                                "cards": [
                                     {
-                                        "label": "Mineral fuels",
-                                        "description": "SITC 3 — all mineral fuels and related materials (crude, refined products, gas, coal, electric current). Headline measure of Singapore's overall fossil-fuel import dependence.",
-                                        "subcharts": _SG_TRADE_SUBCHARTS("3"),
+                                        "type":        "partner_share_dual_axis",
+                                        "title":       "Mineral fuels",
+                                        "description": "SITC 3 — all mineral fuels and related materials (crude, refined products, gas, coal, electric current).",
+                                        "sitc_code":   "SITC_3",
+                                        "sitc_label":  "Mineral Fuels (total)",
+                                        "slug":        "trade_pshare_sitc3",
                                     },
                                     {
-                                        "label": "Crude petroleum oils",
-                                        "description": "SITC 333 — unrefined crude oil, feedstock for Singapore's Jurong Island refineries (processed into gasoline, diesel, jet fuel, naphtha). Most directly exposed category to Middle East supply disruption.",
-                                        "subcharts": _SG_TRADE_SUBCHARTS("333"),
+                                        "type":        "partner_share_dual_axis",
+                                        "title":       "Crude petroleum oils",
+                                        "description": "SITC 333 — unrefined crude oil, feedstock for Singapore's Jurong Island refineries (processed into gasoline, diesel, jet fuel, naphtha).",
+                                        "sitc_code":   "SITC_333",
+                                        "sitc_label":  "Crude Petroleum Oils",
+                                        "slug":        "trade_pshare_sitc333",
                                     },
                                     {
-                                        "label": "Refined petroleum products",
+                                        "type":        "partner_share_dual_axis",
+                                        "title":       "Refined petroleum products",
                                         "description": "SITC 334 — already-refined fuels (gasoline, diesel, jet fuel, naphtha, fuel oil). Singapore also imports refined products to blend, re-export, and supply bunker fuel — the trading-hub side of refining activity.",
-                                        "subcharts": _SG_TRADE_SUBCHARTS("334"),
+                                        "sitc_code":   "SITC_334",
+                                        "sitc_label":  "Refined Petroleum Products",
+                                        "slug":        "trade_pshare_sitc334",
                                     },
                                     {
-                                        "label": "Natural gas (all forms)",
+                                        "type":        "partner_share_dual_axis",
+                                        "title":       "Natural gas (all forms)",
                                         "description": "SITC 343 — natural gas in both pipeline and liquefied form. Singapore is almost entirely import-dependent for gas, which fuels nearly all power generation. Qatar dominates regional LNG supply.",
-                                        "subcharts": _SG_TRADE_SUBCHARTS("343"),
+                                        "sitc_code":   "SITC_343",
+                                        "sitc_label":  "Natural Gas",
+                                        "slug":        "trade_pshare_sitc343",
                                     },
                                     {
-                                        "label": "Naphtha",
+                                        "type":        "partner_share_dual_axis",
+                                        "title":       "Naphtha",
                                         "description": "SITC 3346043 — naphtha, cracked into ethylene/propylene for plastics and used as a gasoline blendstock. Singapore is a major regional trading hub with key Middle Eastern suppliers.",
-                                        "subcharts": _SG_TRADE_SUBCHARTS("3346043"),
+                                        "sitc_code":   "SITC_3346043",
+                                        "sitc_label":  "Naphtha",
+                                        "slug":        "trade_pshare_sitc3346043",
                                     },
                                     {
-                                        "label": "Liquefied natural gas (LNG)",
-                                        "description": "SITC 3431 — LNG specifically (vs SITC 3432 pipeline gas). Imported into the SLNG terminal on Jurong Island; Qatar dominates Middle Eastern supply and is critical to Singapore's power-sector fuel.",
-                                        "subcharts": _SG_TRADE_SUBCHARTS("3431000"),
+                                        "type":        "partner_share_dual_axis",
+                                        "title":       "Liquefied natural gas (LNG)",
+                                        "description": "SITC 3431 — LNG specifically (vs SITC 3432 pipeline gas). Imported into the SLNG terminal on Jurong Island; Qatar is the dominant Middle Eastern supplier.",
+                                        "sitc_code":   "SITC_3431000",
+                                        "sitc_label":  "LNG",
+                                        "slug":        "trade_pshare_sitc3431000",
                                     },
                                 ],
                             },
+                            # ── Singapore exports — regional dependence ─────────
+                            # One parent section, three cards (chemicals, total oil,
+                            # refined petroleum). Each card pairs annual % shares
+                            # (left) with monthly export levels (right) over the
+                            # 10 regional destinations + 'Others' residual.
                             {
                                 "type": "chart_grid",
-                                "title": "Industrial chemical exports — regional dependence",
+                                "title": "Singapore exports — regional dependence",
                                 "description": (
-                                    "Where Singapore's industrial-chemical exports go — covering "
-                                    "SITC 5 (chemicals and related products) less SITC 51 (organic "
-                                    "chemicals) less SITC 54 (medicinal and pharmaceutical products), "
-                                    "i.e. the basic industrial-chemicals subset most exposed to upstream "
-                                    "cost pressure from Middle East energy supply disruption. Annual "
-                                    "shares on the left; monthly levels on the right."
+                                    "Where Singapore's exports of these refining-and-petrochemical "
+                                    "products go. Each card pairs annual % shares (2023–2025, left) "
+                                    "with monthly export levels in SGD thousands (right), broken out "
+                                    "by the same 10 regional destinations as the import-share charts, "
+                                    "plus an 'Others' residual covering non-regional destinations "
+                                    "(mainly US/EU)."
                                 ),
                                 "columns": 1,
                                 "single_legend": True,   # one legend per card across left+right charts
                                 "nodes": [
                                     {
-                                        "label": "Regional destinations of Singapore industrial-chemical exports",
-                                        "description": "Stacked bars by regional partner. Left: annual % shares (2023–2025); bar height caps at the regional aggregate share. Right: monthly levels in SGD thousands; 'Others' = non-regional destinations (mainly US/EU).",
+                                        "label": "Industrial chemicals (SITC 5 less 51 and 54)",
+                                        "description": "SITC 5 (chemicals and related products) less SITC 51 (organic chemicals) less SITC 54 (medicinal and pharmaceutical products) — the basic industrial-chemicals subset most exposed to upstream cost pressure from Middle East energy supply disruption.",
                                         "subcharts": [
                                             {
                                                 "subtitle":     "Annual shares (2023–2025)",
                                                 "chart_type":   "bar",
                                                 "x_axis_type":  "category",
                                                 "stacked":      True,
-                                                "series": [f"sg_chem_export_share_{c}" for c in ("cn","in","id","jp","my","ph","kr","tw","th","vn")],
+                                                "series": [f"sg_chem_export_share_{c}" for c in ("cn","in","id","jp","my","ph","kr","tw","th","vn")]
+                                                          + ["sg_chem_export_share_others"],
                                             },
                                             {
                                                 "subtitle":     "Monthly levels",
@@ -471,6 +496,50 @@ PAGES = {
                                                 "stacked":      True,
                                                 "series": [f"singstat_chem_export_monthly_{c}" for c in ("cn","in","id","jp","my","ph","kr","tw","th","vn")]
                                                           + ["sg_chem_export_monthly_others"],
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        "label": "Total oil — mineral fuels chapter (SITC 3)",
+                                        "description": "SITC 3 — all mineral fuels and related materials (crude, refined products, gas, coal, electric current). Captures the full re-export-and-refining value chain through the Singapore hub.",
+                                        "subcharts": [
+                                            {
+                                                "subtitle":     "Annual shares (2023–2025)",
+                                                "chart_type":   "bar",
+                                                "x_axis_type":  "category",
+                                                "stacked":      True,
+                                                "series": [f"sg_totaloil_export_share_{c}" for c in ("cn","in","id","jp","my","ph","kr","tw","th","vn")]
+                                                          + ["sg_totaloil_export_share_others"],
+                                            },
+                                            {
+                                                "subtitle":     "Monthly levels",
+                                                "chart_type":   "bar",
+                                                "x_axis_type":  "category",
+                                                "stacked":      True,
+                                                "series": [f"singstat_totaloil_export_monthly_{c}" for c in ("cn","in","id","jp","my","ph","kr","tw","th","vn")]
+                                                          + ["sg_totaloil_export_monthly_others"],
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        "label": "Refined petroleum products (SITC 334)",
+                                        "description": "SITC 334 — already-refined fuels (gasoline, diesel, jet fuel, naphtha, fuel oil) re-exported from Jurong Island after blending and processing. The narrow refining-margin slice of SITC 3.",
+                                        "subcharts": [
+                                            {
+                                                "subtitle":     "Annual shares (2023–2025)",
+                                                "chart_type":   "bar",
+                                                "x_axis_type":  "category",
+                                                "stacked":      True,
+                                                "series": [f"sg_petroleum_export_share_{c}" for c in ("cn","in","id","jp","my","ph","kr","tw","th","vn")]
+                                                          + ["sg_petroleum_export_share_others"],
+                                            },
+                                            {
+                                                "subtitle":     "Monthly levels",
+                                                "chart_type":   "bar",
+                                                "x_axis_type":  "category",
+                                                "stacked":      True,
+                                                "series": [f"singstat_petroleum_export_monthly_{c}" for c in ("cn","in","id","jp","my","ph","kr","tw","th","vn")]
+                                                          + ["sg_petroleum_export_monthly_others"],
                                             },
                                         ],
                                     },
@@ -548,7 +617,7 @@ PAGES = {
                                 "nodes": [
                                     {
                                         "label": "Tankers",
-                                        "description": "Vessels carrying crude, refined products, LNG, and chemicals — the category most directly exposed to Iran/Hormuz disruption. Sub-charts split out vessel calls and inbound/outbound cargo tonnage.",
+                                        "description": "Vessels carrying crude, refined products, LNG, and chemicals. Sub-charts split out vessel calls and inbound/outbound cargo tonnage.",
                                         "subcharts": [
                                             {"subtitle": "Port calls (count)",
                                              "chart_type": "line", "x_axis_type": "time", "stacked": False,
@@ -563,7 +632,7 @@ PAGES = {
                                     },
                                     {
                                         "label": "Containers",
-                                        "description": "General-merchandise vessel traffic — captures broader trade-flow impact from energy-price knock-on effects and supply-chain rerouting. Sub-charts split out vessel calls and inbound/outbound cargo tonnage.",
+                                        "description": "General-merchandise vessel traffic. Sub-charts split out vessel calls and inbound/outbound cargo tonnage.",
                                         "subcharts": [
                                             {"subtitle": "Port calls (count)",
                                              "chart_type": "line", "x_axis_type": "time", "stacked": False,
@@ -618,7 +687,7 @@ PAGES = {
                                     },
                                     {
                                         "label": "USD/SGD implied vol — 1M vs 3M",
-                                        "description": "Daily option-implied volatility on USD/SGD pair, 1-month and 3-month tenors. Spikes signal expected currency turbulence; also a forward-looking proxy for risk-off sentiment.",
+                                        "description": "Daily option-implied volatility on USD/SGD pair, 1-month and 3-month tenors.",
                                         "series": [
                                             "gsheets_usd_sgd_opt_vol_1m",
                                             "gsheets_usd_sgd_opt_vol_3m",
@@ -687,7 +756,7 @@ PAGES = {
                                     },
                                     {
                                         "label": "SGX daily turnover",
-                                        "description": "Daily SGX equity turnover, millions of shares. Spikes typically coincide with risk-off episodes or earnings/index-rebalancing days.",
+                                        "description": "Daily SGX equity turnover, millions of shares.",
                                         "series": ["financial_sgx_turnover"],
                                     },
                                 ],
@@ -751,23 +820,21 @@ PAGES = {
                                 "type": "chart_grid",
                                 "title": "Industrial Production",
                                 "description": (
-                                    "Year-on-year change in industrial / manufacturing production "
-                                    "across 10 Asian economies — real-side activity gauges that "
-                                    "show where higher energy and input costs are biting into "
-                                    "manufacturing output. All series are % year-on-year for "
-                                    "direct cross-country comparison."
+                                    "Industrial / manufacturing production across 10 Asian economies. "
+                                    "Aligns with the Singapore Sectoral IPI format so cross-country "
+                                    "trends can be read on a single comparable scale."
                                 ),
                                 "nodes": [
-                                    {"label": "China",       "description": "Headline industrial activity for China — official Value Added of Industry, year-on-year.",                       "series": ["regional_ipi_cn"]},
-                                    {"label": "India",       "description": "India's industrial production index, year-on-year — covers mining, manufacturing, and electricity output.",      "series": ["regional_ipi_in"]},
-                                    {"label": "Indonesia",   "description": "Indonesia's industrial production index, year-on-year. Publishes with a longer lag than peers, so recent months may be sparse.", "series": ["regional_ipi_id"]},
-                                    {"label": "Japan",       "description": "Japan's mining and manufacturing industrial production index, year-on-year.",                                     "series": ["regional_ipi_jp"]},
-                                    {"label": "Malaysia",    "description": "Malaysia's industrial production index, year-on-year — covers mining, manufacturing, and electricity.",          "series": ["regional_ipi_my"]},
-                                    {"label": "Philippines", "description": "Philippines manufacturing output, year-on-year — volume-based industrial production index.",                      "series": ["regional_ipi_ph"]},
-                                    {"label": "South Korea", "description": "South Korea total manufacturing production, year-on-year (seasonally adjusted, OECD-harmonised).",                "series": ["regional_ipi_kr"]},
-                                    {"label": "Taiwan",      "description": "Taiwan's industrial production index, year-on-year.",                                                              "series": ["regional_ipi_tw"]},
-                                    {"label": "Thailand",    "description": "Thailand's industrial production index, year-on-year.",                                                           "series": ["regional_ipi_th"]},
-                                    {"label": "Vietnam",     "description": "Vietnam's industrial production index, year-on-year.",                                                            "series": ["regional_ipi_vn"]},
+                                    {"label": "China",       "description": "Headline industrial activity for China — official Value Added of Industry (NBS).",                            "series": ["regional_ipi_index_cn"]},
+                                    {"label": "India",       "description": "India's industrial production index — covers mining, manufacturing, and electricity output.",                "series": ["regional_ipi_index_in"]},
+                                    {"label": "Indonesia",   "description": "Indonesia's industrial production index. Publishes with a longer lag than peers, so recent months may be sparse.", "series": ["regional_ipi_index_id"]},
+                                    {"label": "Japan",       "description": "Japan's mining and manufacturing industrial production index.",                                                "series": ["regional_ipi_index_jp"]},
+                                    {"label": "Malaysia",    "description": "Malaysia's industrial production index — covers mining, manufacturing, and electricity.",                     "series": ["regional_ipi_index_my"]},
+                                    {"label": "Philippines", "description": "Philippines manufacturing output — volume-based industrial production index.",                                "series": ["regional_ipi_index_ph"]},
+                                    {"label": "South Korea", "description": "South Korea total manufacturing production (seasonally adjusted, OECD-harmonised).",                          "series": ["regional_ipi_index_kr"]},
+                                    {"label": "Taiwan",      "description": "Taiwan's industrial production index.",                                                                       "series": ["regional_ipi_index_tw"]},
+                                    {"label": "Thailand",    "description": "Thailand's industrial production index.",                                                                     "series": ["regional_ipi_index_th"]},
+                                    {"label": "Vietnam",     "description": "Vietnam's industrial production index.",                                                                      "series": ["regional_ipi_index_vn"]},
                                 ],
                             },
                         ],
@@ -1016,7 +1083,7 @@ PAGES = {
                                         "nodes": [
                                             {
                                                 "label": "Tanker",
-                                                "description": "Tanker activity — vessels carrying crude oil, refined products, LNG, and chemicals. Most directly exposed to Iran/Hormuz disruption.",
+                                                "description": "Tanker activity — vessels carrying crude oil, refined products, LNG, and chemicals.",
                                                 "subcharts": [
                                                     {"subtitle": "Port calls (count)",
                                                      "chart_type": "line", "x_axis_type": "time", "stacked": False,
@@ -1031,7 +1098,7 @@ PAGES = {
                                             },
                                             {
                                                 "label": "Container",
-                                                "description": "Container activity — general merchandise. Reflects broader trade impact (knock-on effect from energy price shocks, supply-chain re-routing).",
+                                                "description": "Container activity — general merchandise.",
                                                 "subcharts": [
                                                     {"subtitle": "Port calls (count)",
                                                      "chart_type": "line", "x_axis_type": "time", "stacked": False,
@@ -1118,23 +1185,23 @@ PAGES = {
                                 "hide_legend":      True,
                                 "nodes": [
                                     {"label": "Gold",
-                                     "description": "COMEX gold futures front-month (USD/oz). Global safe-haven benchmark; Iran/Hormuz tensions typically push gold higher.",
+                                     "description": "COMEX gold futures front-month (USD/oz).",
                                      "series": ["GOLD"],
                                      # Per-card override: gold is a financial-stress signal
                                      # (safe-haven flow), not a supply-cost signal like
                                      # the other commodities in this section.
                                      "relevant_to": ["financial_markets"]},
                                     {"label": "Copper",
-                                     "description": "COMEX copper futures (USD/lb). Leading indicator of global industrial demand and a proxy for China growth.",
+                                     "description": "COMEX copper futures (USD/lb).",
                                      "series": ["COPPER"]},
                                     {"label": "Aluminum",
-                                     "description": "LME aluminum 3-month forward (USD/tonne). Major industrial metal, energy-intensive to produce so sensitive to power costs.",
+                                     "description": "LME aluminum 3-month forward (USD/tonne).",
                                      "series": ["ALUMINUM"]},
                                     {"label": "Nickel",
                                      "description": "LME nickel (USD/tonne). Used in stainless steel and EV batteries; Indonesia is the largest producer and SE Asia a major refiner.",
                                      "series": ["NICKEL"]},
                                     {"label": "JKM LNG",
-                                     "description": "Japan/Korea Marker (USD/MMBtu). The Asian spot LNG benchmark assessed daily by Platts. Spikes when Hormuz transit risk rises — Qatari LNG accounts for ~20% of global supply.",
+                                     "description": "Japan/Korea Marker (USD/MMBtu). The Asian spot LNG benchmark assessed daily by Platts. Qatari LNG accounts for ~20% of global supply.",
                                      "series": ["JKM_LNG"]},
                                     {"label": "Rubber TSR20",
                                      "description": "Bangkok STR 20 (≡ TSR 20), 2nd-month FOB price, converted to USc/kg via daily FX. Asian natural rubber benchmark — Thailand leads regional production, with Indonesia and Vietnam close behind.",
@@ -1144,10 +1211,10 @@ PAGES = {
                                     # context). The new "Data starts ..." stale label
                                     # surfaces this on each card.
                                     {"label": "Newcastle coal",
-                                     "description": "Newcastle FOB Australia thermal coal (USD/tonne). The seaborne Asian thermal coal benchmark; a substitute fuel that often moves with LNG.",
+                                     "description": "Newcastle FOB Australia thermal coal (USD/tonne). The seaborne Asian thermal coal benchmark.",
                                      "series": ["COAL_NEWC"]},
                                     {"label": "Crude palm oil",
-                                     "description": "FCPO front-month on Bursa Malaysia (MYR/tonne). The global palm oil benchmark. Important for Indonesia and Malaysia (top exporters).",
+                                     "description": "FCPO front-month on Bursa Malaysia (MYR/tonne). The global palm oil benchmark; Indonesia and Malaysia are the top exporters.",
                                      "series": ["CPO"]},
                                 ],
                             },

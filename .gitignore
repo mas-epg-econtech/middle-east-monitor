@@ -12,6 +12,11 @@ data/*
 # reference but not part of Iran Monitor itself.
 reference/
 
+# Working artifacts — local review screenshots, draft showcase decks.
+# Kept locally for review iterations; not part of the deployed dashboard.
+screenshots/
+middle_east_monitor_showcase.pptx
+
 # Python bytecode
 __pycache__/
 *.pyc
