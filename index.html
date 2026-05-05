@@ -118,6 +118,17 @@
     .card-header { margin-bottom: 0.75rem; }
     .card-header h3 { margin: 0 0 0.25rem; font-size: 0.98rem; color: var(--accent); font-weight: 600; }
     .card-desc { margin: 0; font-size: 0.83rem; color: var(--text-muted); line-height: 1.5; max-width: 64ch; }
+    /* Inline card title + description used by partner_share_grid cards.
+       Slightly smaller than .card-header h3 since these sit one nesting
+       level deeper (parent section already has its own h2). */
+    .chart-card-title {
+      margin: 0 0 0.4rem; font-size: 0.95rem; color: var(--accent);
+      font-weight: 600;
+    }
+    .chart-card-desc {
+      margin: 0 0 0.75rem; font-size: 0.82rem; color: var(--text-muted);
+      line-height: 1.5; max-width: 64ch;
+    }
 
     /* Visible chart-ID badge — surfaces the deterministic chart ID (e.g.
        ⌗ sg.activity.petroleum_refining) so the LLM narrative system can
@@ -221,6 +232,27 @@
       font-size: 0.93rem;
       text-align: justify;
       hyphens: auto;
+    }
+    /* Labelled-bullets narrative — used for both energy_supply (3-section
+       upstream/physical/passthrough structure) and financial_markets
+       (Credit / IR / FX / Liquidity / Overall). Same visual on both cards. */
+    .status-sections {
+      list-style: disc;
+      padding-left: 1.2rem;
+      margin: 0.4rem 0 0.9rem;
+      color: var(--text);
+      font-size: 0.93rem;
+      line-height: 1.55;
+    }
+    .status-sections li {
+      margin: 0.4rem 0;
+    }
+    .status-section-label {
+      font-weight: 600;
+      color: #e0e6ef;
+    }
+    .status-section-body {
+      color: var(--text);
     }
 
     /* Stepper-pill scale showing all 4 levels with the current one
@@ -1141,7 +1173,7 @@
   </div>
 
   <footer>
-    <span>Middle East Monitor &middot; built 2026-05-04 22:33 by MAS-EPG-EconTech</span>
+    <span>Middle East Monitor &middot; built 2026-05-05 11:00 by MAS-EPG-EconTech</span>
     <span>Data: CEIC, SingStat, Motorist, DataGov, Bloomberg/GSheets, Yahoo Finance, ADB AsianBondsOnline, Investing.com, IMF PortWatch</span>
   </footer>
 
@@ -1499,6 +1531,21 @@
       Object.entries(CHART_CONFIGS).forEach(([id, cfg]) => {
         const el = document.getElementById(id);
         if (!el) return;
+        // Tooltip precision: % share charts → 1 d.p. + '%' suffix.
+        // Detected from y-axis title text (set from the underlying series unit).
+        const yTitle = (cfg.options && cfg.options.scales && cfg.options.scales.y &&
+                        cfg.options.scales.y.title && cfg.options.scales.y.title.text) || '';
+        if (yTitle === '% share') {
+          cfg.options = cfg.options || {};
+          cfg.options.plugins = cfg.options.plugins || {};
+          cfg.options.plugins.tooltip = cfg.options.plugins.tooltip || {};
+          cfg.options.plugins.tooltip.callbacks = cfg.options.plugins.tooltip.callbacks || {};
+          cfg.options.plugins.tooltip.callbacks.label = function(context) {
+            const lbl = context.dataset.label || '';
+            const v = context.parsed && context.parsed.y;
+            return lbl + ': ' + (v == null ? '—' : v.toFixed(1) + '%');
+          };
+        }
         try {
           window._chartInstances[id] = new Chart(el, cfg);
         } catch (e) {
