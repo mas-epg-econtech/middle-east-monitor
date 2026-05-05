@@ -337,11 +337,11 @@ SERIES_DESCRIPTIONS: dict[str, dict[str, str]] = {
         "desc": "Foreign Wholesale Trade Index — overall foreign wholesale trade activity at 2017=100.",
     },
     "Foreign Wholesale Trade Index — Petroleum and Petroleum Products": {
-        "name": "Petroleum & PP",
+        "name": "Petroleum and Related Products",
         "desc": "Foreign Wholesale Trade Index — petroleum and petroleum products subsector. Direct exposure to upstream energy cost shocks.",
     },
     "Foreign Wholesale Trade Index — Chemical and Chemical Products": {
-        "name": "Chemical & CP",
+        "name": "Chemicals and Related Products",
         "desc": "Foreign Wholesale Trade Index — chemical and chemical products subsector. Reflects passthrough from feedstock to wholesale margins.",
     },
     "Foreign Wholesale Trade Index — Ship Chandlers and Bunkering": {
@@ -394,11 +394,11 @@ SERIES_DESCRIPTIONS: dict[str, dict[str, str]] = {
         "desc": "URA monthly count of private residential property transactions — combines developer sales and resales. Proxy for buyer activity.",
     },
 
-    # ── Food & beverage (chained-volume index, 2017=100) ─────────────────
+    # ── Food & beverage (chained-volume index, 2025=100) ─────────────────
     # 2026-04-30: replaced single food_and_beverage_sales with 6-segment series.
     "F&B Services Index — Overall": {
         "name": "Overall",
-        "desc": "F&B Services Index (chained-volume) — overall sector activity at 2017=100.",
+        "desc": "F&B Services Index (chained-volume) — overall sector activity at 2025=100.",
     },
     "F&B Services Index — Restaurants": {
         "name": "Restaurants",

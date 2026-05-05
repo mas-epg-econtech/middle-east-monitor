@@ -408,7 +408,7 @@ PAGES = {
                                 "single_legend": True,   # one legend per card across left+right charts
                                 "nodes": [
                                     {
-                                        "label": "Mineral fuels — chapter total",
+                                        "label": "Mineral fuels",
                                         "description": "SITC 3 — all mineral fuels and related materials (crude, refined products, gas, coal, electric current). Headline measure of Singapore's overall fossil-fuel import dependence.",
                                         "subcharts": _SG_TRADE_SUBCHARTS("3"),
                                     },
@@ -719,7 +719,7 @@ PAGES = {
                         "subsections": [
                             {
                                 "type": "chart_grid",
-                                "title": "Inflation — Annual",
+                                "title": "Inflation",
                                 "description": (
                                     "Year-on-year inflation across 10 Asian economies "
                                     "(China, India, Indonesia, Japan, Malaysia, Philippines, "
@@ -749,7 +749,7 @@ PAGES = {
                         "subsections": [
                             {
                                 "type": "chart_grid",
-                                "title": "Industrial Production — Annual",
+                                "title": "Industrial Production",
                                 "description": (
                                     "Year-on-year change in industrial / manufacturing production "
                                     "across 10 Asian economies — real-side activity gauges that "

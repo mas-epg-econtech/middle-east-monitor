@@ -155,7 +155,7 @@ Authentication via `CEIC_USERNAME` / `CEIC_PASSWORD` in `.env`. Used for:
   Products + Chemicals & Chemical Products + Ship Chandlers & Bunkering
   (4 monthly series at 2017=100; replaced two quarterly SingStat WTI series)
 - Singapore F&B Services Index — Overall + 5 segments (restaurants, fast
-  food, caterers, food courts, cafes; chained-volume, 2017=100)
+  food, caterers, food courts, cafes; chained-volume, 2025=100)
 - Global energy benchmarks (crude WTI/Brent, US natural gas, German gas,
   Japan/France naphtha)
 - Regional headline + core CPI YoY for 10 Asian economies (20 series)
