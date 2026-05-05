@@ -1,19 +1,30 @@
 # Regional Trade — Investigation Notes & Parked State
 
-**Status as of 2026-04-30 (afternoon):**
+**Status as of 2026-05-05:**
 - **Singapore Trade tab — DONE.** The SG-dependence-on-ME-fuels story is
-  built and live (6 wide cards, one per SITC code, each with annual ME
-  shares + monthly stacked levels). Sourced from the SingStat sheet via
-  `trade_singstat`. See `page_layouts.py` → `singapore` → `trade` tab.
-- **Regional Trade tab — CHEMICALS DONE.** 10 country cards live, each
-  with annual SG-share (Comtrade, 2023+2024) on the left and monthly
-  imports from SG (SingStat, with 2023-24 monthly avg benchmark) on the
-  right. Comtrade dependence ingest ran 2026-04-30; ingested 9 of 10
-  reporters cleanly (Vietnam 2024 still pending Comtrade publication —
-  auto-fills on next runs via `only_stale=True`). See §7b for the bug
-  we hit and fixed (W00 double-counting).
-- **Regional Trade tab — MINERAL FUELS PARKED (waiting on data feed).**
-  See §7c.
+  built and live (6 wide cards, one per SITC code, each with a
+  100%-stacked partner-share bar + a red ME-affected aggregate line).
+  Sourced from `trade_singstat`. See `page_layouts.py` → `singapore`
+  → `trade` tab.
+- **Singapore Trade tab — EXPORTS section DONE (added 2026-05-05).**
+  Three cards under one parent ("Singapore exports — regional
+  dependence"): industrial chemicals (SITC 5 less 51 less 54), oil
+  (SITC 3), refined petroleum products (SITC 334). Each pairs annual
+  % shares (left) with monthly levels (right) over the 10 regional
+  destinations + "Others" residual. Sourced from the SingStat sheet
+  tabs `SG_Chemicals_DX`, `SG_TotalOil_DX`, `SG_Petroleum_DX`.
+- **Regional Trade tab — CHEMICALS + REFINED PETROLEUM DONE.** Single
+  view-selector section with two product views (refined petroleum is
+  the default lead, chemicals is the secondary view). Each view shows:
+  (1) cross-country `country_share_comparison` ranking by 2024 SG
+  share; (2) 10 per-country monthly cards from
+  `regional_{chem,fuel}_imports_from_sg_<iso2>`. Annual shares from
+  Comtrade 2023+2024; monthly levels from SingStat. See `page_layouts.py`
+  → `regional` → `trade` tab.
+- **Regional Trade tab — ME-SUPPLIER DEPENDENCE TABLED.** The "regional
+  countries' dependence on ME suppliers" story (the second half of the
+  original D3 scope) is data-incomplete. Audit findings + decision:
+  see §7d.
 
 ---
 
@@ -194,35 +205,63 @@ the dashboard is supposed to enable.
 
 ---
 
-## 4. What we built but didn't run
+## 4. What was built — current state (post-resume, 2026-05-05)
 
-### Schema (committed)
+### Schema
 
 `trade_comtrade_dep` table + 3 indexes, created via `init_db()` in
-`src/db.py`. Currently empty.
+`src/db.py`. **Populated** with ~10k rows: 10 reporters × 7 SITC ×
+2 years (2023, 2024). Vietnam 2024 still empty — Comtrade hasn't
+published; auto-retried on every pipeline run via `only_stale=True`.
 
-### Helpers (committed)
+### Helpers
 
 `upsert_comtrade_dep_partition` and `comtrade_dep_partition_exists`
-in `src/db.py`.
+in `src/db.py`. Both used by the live ingestor.
 
-### Ingestor (committed, runs cleanly, but disabled in pipeline)
+### Ingestor — running in pipeline as `[4b]`
 
 `fetch_comtrade_regional_dep(conn, only_stale=True)` in
 `scripts/energy/update_data.py`. Behaviour:
 
-- Iterates 10 reporters × 7 SITC × 3 years
+- Iterates 10 reporters × 7 SITC × 2 years (2025 dropped at parking
+  time; see §5.1)
 - Per-call: query Comtrade with no partner filter + `partner2Code=0`,
   sum returned rows by partner_iso3, write to DB
 - `only_stale=True`: skips (reporter, sitc, year) partitions already
   present in the DB → restartable across days when rate-limited
 - **Empty responses are NOT marked as ingested** — important, because
-  many reporters publish 2025 data months late, so we want subsequent
+  some reporters (e.g. Vietnam) publish late, so we want subsequent
   runs to retry the empties once Comtrade catches up
 - Live progress printed per call (partner count, World total, SG share)
 - **Coverage matrix** printed at end showing reporter × year completeness
 
-### Documents (committed)
+### Derivations
+
+In `src/derived_series.py`, called from `update_data.py` `[4c]`:
+
+- `compute_regional_chem_share_from_sg(conn)` — emits
+  `regional_chem_share_from_sg_<iso2>` (10 series, annual 2023-24)
+- `compute_regional_fuel_share_from_sg(conn)` — emits
+  `regional_fuel_share_from_sg_<iso2>` (10 series, annual 2023-24,
+  SITC 334 only)
+
+Plus monthly companion derivations in `[3c.b]` (sourced from
+`trade_singstat`, not Comtrade):
+
+- `compute_regional_chem_levels(conn)` →
+  `regional_chem_imports_from_sg_<iso2>`
+- `compute_regional_fuel_levels(conn)` →
+  `regional_fuel_imports_from_sg_<iso2>`
+
+### Renderer
+
+The Regional Trade tab uses the existing `view_selector` +
+`country_share_comparison` + `chart_grid` section types — no new
+section type was needed. Decision recorded in §5.4: pre-derive ratios
+as `time_series` rows.
+
+### Documents
 
 - `METHODOLOGY.md` — high-level project narrative
 - `REGIONAL_TRADE_NOTES.md` — this file
@@ -233,41 +272,44 @@ in `src/db.py`.
 - `probe_comtrade_regional_chem.py` — initial coverage probe (HS+SITC)
 - `probe_comtrade_world_aggregation.py` — diagnosed the 173-row issue
 
-### What's NOT done
+### What's NOT done (and may stay that way)
 
-- Ingest never run end-to-end (would take ~10 min for 210 calls)
-- `derived_series.compute_regional_chem_dep_on_sg` not written (would
-  compute the share ratios on top of `trade_comtrade_dep`)
-- New chart_grid section type that consumes `trade_comtrade_dep`
-  directly (or stacked-bar derived series) not built
-- Regional Trade tab still shows the older per-country chemicals-export
-  panels (sourced from SingStat sheet) — not the dependence-ratio
-  story this work was building toward
+- **ME-supplier dependence story** — see §7d. Data in
+  `trade_comtrade_dep` supports it, but coverage is too patchy to ship.
+- **2025 / 2026 data** — `COMTRADE_DEP_YEARS` is still
+  `["2023", "2024"]`. Bump when Comtrade publishes.
+- **HS-Annual ingest** as an alternative to SITC-Annual — never probed;
+  may be worth revisiting if 2025 SITC coverage stays thin.
 
 ---
 
 ## 5. Open questions / known issues
 
-### 5.1 The 2025 coverage gap (the parking blocker)
+### 5.1 The 2025 coverage gap
 
-What to do about it when resuming. Three documented options:
+We resumed in 2026-04-30 by **dropping 2025 entirely** (option A
+below) — `COMTRADE_DEP_YEARS = ["2023", "2024"]`. Bump when Comtrade
+catches up; the ingest will fill new partitions on the next run.
+
+Options that were considered:
 
 - **A. Drop 2025 entirely** — show 2-bar baselines (2023, 2024) for all
-  10 countries. Visually consistent; loses one data point.
+  10 countries. Visually consistent; loses one data point. **Chosen.**
 - **B. Probe Comtrade HS-Annual mode** — many reporters file faster in
   HS than SITC; ~30 min probe, may give us 2025 coverage for the
   missing 7 reporters. HS↔SITC mapping noise is small at chapter
-  boundaries (we discussed: SITC 5 ≈ HS 28-39, SITC 51 ≈ HS 29,
-  SITC 54 ≈ HS 30; ~2-3% drift).
+  boundaries (SITC 5 ≈ HS 28-39, SITC 51 ≈ HS 29, SITC 54 ≈ HS 30;
+  ~2-3% drift). **Not pursued; revisit if 2025 SITC coverage stays
+  thin into late 2026.**
 - **C. CEIC for fresher reporter-level aggregates** — CEIC often has
   reporter trade aggregates faster than Comtrade. But CEIC's
   *bilateral* coverage (X reports trade with Y) is patchier than its
   aggregate coverage; may not give us the partner detail we need.
-
-Recommendation: try **B** first (cheap probe), fall back to **A** if B
-doesn't help. **C** is a future improvement, not a launch blocker.
+  **Not pursued.**
 
 ### 5.2 SITC↔HS mapping if we go HS
+
+(Reference table for option B, not currently in use.)
 
 | SITC | HS chapter(s) |
 |---|---|
@@ -282,57 +324,53 @@ doesn't help. **C** is a future improvement, not a launch blocker.
 
 ### 5.3 ME partner set
 
-Default suggested: IR, SA, AE, KW, IQ, QA, OM (7 countries — same as
-the original ME dashboard's spotlight). Israel is technically ME but
-not a fuel exporter; Bahrain is small; Yemen is offline. We can
-expand this later by querying additional partners and re-aggregating
-in the renderer (no re-ingest needed because we keep all partners).
+For the SG-dependence story (which is what shipped), the ME partner
+set isn't directly used — the chart shows SG share as numerator and
+World as denominator. The ME partner set is only relevant for the
+ME-supplier dependence story tabled in §7d.
 
-### 5.4 Renderer pattern decision
+For that future work, the canonical 6-affected-countries set is:
+**UAE, Saudi Arabia, Qatar, Iraq, Kuwait, Bahrain** (matches the
+Singapore Trade tab's red-line aggregate). Oman and Iran can be
+included for context; both have caveats — Oman is a smaller exporter,
+Iran is sanctions-affected so most counterparties don't report it.
+All partners are kept in `trade_comtrade_dep` so re-aggregating to a
+different ME set is a renderer-only change.
 
-When we resume, decide between:
+### 5.4 Renderer pattern decision — RESOLVED
 
-- Pre-derive ratios as `time_series` rows (simpler, less flexible)
-- New `trade_dep_grid` section type that queries `trade_comtrade_dep`
-  directly (more flexible, more renderer code)
-
-The doc earlier in this conversation included a sketch of the
-section-config schema for the second approach.
+We chose to pre-derive ratios as `time_series` rows
+(`regional_{chem,fuel}_share_from_sg_<iso2>`). The existing
+`country_share_comparison` and `chart_grid` section types consume
+them with no renderer changes. The alternative (`trade_dep_grid`
+section type querying `trade_comtrade_dep` directly) is unbuilt and
+no longer needed for the current scope; revisit if a future use case
+requires runtime aggregation across partner sets.
 
 ---
 
-## 6. Resume here
+## 6. Resume history (what was done after parking)
 
-When picking this back up, the recommended order:
+The resume plan above was executed in 2026-04-30 → 2026-05-05. For the
+historical record:
 
-1. **Re-probe Comtrade HS-Annual** to test whether 2025 coverage
-   improves vs SITC-Annual. Edit
-   `scripts/probe_comtrade_regional_chem.py`: change `COMTRADE_URL` to
-   `/data/v1/get/C/A/HS`, change `PROBE_SITC_CODE` to `'28'` (a
-   chemical chapter), rerun. Compare hit/miss matrix to the SITC run.
+1. **Comtrade HS-Annual probe** — not run; we accepted dropping 2025
+   from `COMTRADE_DEP_YEARS` instead of switching classifications.
+2. **`[4b]` re-enabled** in `update_data.py` 2026-04-30; runs every
+   pipeline pass with `only_stale=True`.
+3. **Ingest run** — produced ~10k rows in `trade_comtrade_dep` covering
+   10 reporters × 7 SITC × 2 years (2023, 2024). Vietnam 2024 still
+   missing as of 2026-05-05 (Comtrade hasn't published — auto-retries
+   on every run).
+4. **Derivations built**: `compute_regional_chem_share_from_sg`,
+   `compute_regional_fuel_share_from_sg`, `compute_regional_chem_levels`,
+   `compute_regional_fuel_levels` — all in `derived_series.py`, all
+   running in steps `[3c.b]` and `[4c]` of the pipeline.
+5. **Regional Trade tab wired** with the view-selector pattern: refined
+   petroleum (default) + industrial chemicals. Annual share comparison
+   on top of each view, 10-country monthly cards underneath.
 
-2. **Decide A vs B based on the coverage** — if HS gives us all 10
-   reporters for 2025, switch the production ingest's `cl` from `S4`
-   to `HS` and adjust `COMTRADE_DEP_SITC_CODES` to HS chapters
-   `[28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 27]`. If not,
-   drop 2025 from `COMTRADE_DEP_YEARS`.
-
-3. **Re-enable the `[4b]` step** in `update_data.py`. Search for the
-   `# [PARKED]` marker and uncomment the call.
-
-4. **Run a fresh ingest** — `python3.11 scripts/energy/update_data.py`.
-   ~10 min for 210 calls. Inspect the coverage matrix at the end.
-
-5. **Build the derivation** (`compute_regional_chem_dep_on_sg` and
-   sibling for ME exposure) in `src/derived_series.py`. Output:
-   per-country annual time_series rows for the dashboard.
-
-6. **Wire two new sections** on the Regional Trade tab in
-   `src/page_layouts.py`: chemical dependence on SG + mineral fuel
-   exposure to ME. Replace or augment the existing per-country
-   chemical-import panels.
-
-7. **Rebuild and review** the dashboard.
+See §7d for what was attempted after that and tabled.
 
 ---
 
@@ -431,57 +469,111 @@ to compute partner-specific shares without re-fetching.
 
 ---
 
-## 7c. Mineral fuels regional dependence — PARKED
+## 7c. Mineral fuels regional dependence — DONE (was §7c PARKED)
 
-Same dependence story as the chemicals card, but for mineral fuels
-(SITC 3 + 333/334/343). Data scoping done 2026-04-30:
+This was parked 2026-04-30 because the chemicals card pairs annual
+Comtrade shares with monthly SingStat absolute imports, but no
+`SG_Fuel_DX` equivalent existed for refined petroleum at parking time.
 
-**Findings on the four candidate SITC codes:**
-| SITC | What | SG share story |
+**Unblocked 2026-05-05.** The colleague's feed landed:
+- `SG_Petroleum_DX` (SITC 334 — refined petroleum monthly exports by
+  destination) was added.
+- `SG_TotalOil_DX` (SITC 3 — total mineral-fuels-chapter monthly
+  exports by destination) was added in the same batch.
+
+`compute_regional_fuel_share_from_sg` + `compute_regional_fuel_levels`
+were wired into the pipeline (`[3c.b]` and `[4c]`), and the Regional
+Trade tab now shows refined petroleum as the default view of the
+view-selector. SITC 3 versions exist in the DB but aren't displayed
+on the Regional Trade tab today (only on the Singapore Trade tab's
+exports section).
+
+**Final SITC scoping decision:**
+| SITC | What | Status on Regional Trade tab |
 |---|---|---|
-| 3   | Mineral fuels TOTAL | 0.2-1% for most countries; **29% for Indonesia, 19% for Malaysia** (reflects refined-product reweighting) |
-| 333 | Crude petroleum     | ≈0% across all 10 reporters — SG produces no crude. Skip. |
-| 334 | Refined petroleum   | THE STORY. **Indonesia 53%, Malaysia 34%**, others 6-10%. SG is the regional refining hub. |
-| 343 | Natural gas         | ≈0% across the board. SG isn't a gas exporter. Skip. |
+| 3   | Mineral fuels TOTAL | Available in DB; not displayed (refined petroleum tells the cleaner story) |
+| 333 | Crude petroleum     | ≈0% across the board (SG has no crude output) — never displayed |
+| 334 | Refined petroleum   | **Displayed.** Indonesia 53%, Malaysia 34%, others 6-10%. |
+| 343 | Natural gas         | ≈0% across the board (SG isn't a gas exporter) — never displayed |
 
-So only SITC 3 (chapter total) and SITC 334 (refined petroleum) are
-worth displaying. The crude/gas categories are noise.
+---
 
-**Why parked:** the chemicals card pairs annual shares (Comtrade) with
-monthly absolute imports (SingStat `SG_Chemicals_DX`). For mineral
-fuels we'd want the same pairing — annual SG shares for each country
-+ monthly absolute imports from SG to each country. **The monthly
-companion data doesn't exist yet** — there's no `SG_Fuel_DX`
-equivalent in the SingStat sheet. A colleague is going to add SG's
-exports of SITC 334 to the regional countries to a similar sheet.
-Until that lands, the cards would be annual-only and visually
-different from the chemicals layout.
+## 7d. ME-supplier dependence on regional side — TABLED (2026-05-05)
 
-**Recommended layout once monthly data lands** (one wide combined card
-per the chemicals pattern, dropping SITC 333/343):
-- Section: "Mineral fuel imports from Singapore — by regional country"
-- 10 country cards
-- LEFT subchart: annual SG share (SITC 3 chapter, or SITC 334 — pick one
-  or include both as grouped bars)
-- RIGHT subchart: monthly imports from SG (whatever the colleague's
-  feed provides) with 2023-24 monthly avg benchmark
+The original D3 scope had two halves:
+1. Each regional country's dependence on Singapore for chemicals + fuels
+   → DONE (§7c).
+2. Each regional country's dependence on the **6 affected Middle East
+   countries** (UAE, Saudi Arabia, Qatar, Iraq, Kuwait, Bahrain — plus
+   Oman and Iran for context) for crude / refined petroleum / gas.
+   → **TABLED.**
 
-**To resume:**
-1. Get the new sheet/feed from the colleague — confirm what SITC level
-   it's at (334? 3? both?), what countries are covered, and what
-   reporting frequency (monthly assumed).
-2. Extend `fetch_singstat_trade_from_gsheets()` (in `update_data.py`)
-   to ingest the new tab into `trade_singstat` with a new product_code.
-3. Add a derivation `compute_regional_fuel_imports_from_sg(conn)`
-   producing alias series `regional_fuel_imports_from_sg_<iso2>`
-   parallel to the chemicals one.
-4. Add the section in `page_layouts.py` mirroring the chemicals
-   combined card.
+The data sits in `trade_comtrade_dep` already — every individual
+partner row is stored, including the ME suppliers. So no new ingest
+is needed; just a `compute_regional_fuel_share_from_me(conn)`
+derivation and a new view in the existing view-selector. **But** the
+data we have is too patchy to ship a credible cross-country, cross-SITC
+view.
 
-The annual SG-share derivation
-(`compute_regional_chem_share_from_sg`) can be generalised to handle
-fuel SITC codes too — it's already partner-summing from
-`trade_comtrade_dep`. Just parameterise the SITC list.
+### Audit (run 2026-05-05 against `trade_comtrade_dep`)
+
+**Years covered:** 2023 + 2024 only. No 2025 (Comtrade hadn't
+published at parking time and the `COMTRADE_DEP_YEARS` constant still
+lists `["2023","2024"]`); no 2026 (too early). Most recent data point
+would already be ~16 months stale in any chart.
+
+**Coverage holes by SITC:**
+
+| Issue | Detail |
+|---|---|
+| **Vietnam 2024** | 0 rows across all SITC. Today's pipeline log still flagged 7 EMPTY responses for VN/2024 ("will retry on next run"). |
+| **Indonesia + Malaysia natural gas (SITC 343)** | Zero rows for both reporters across both years. Both are net LNG exporters so their gas-import side is genuinely tiny / not reportable. |
+| **SITC 343 broadly thin** | Only ARE, QAT, OMN show up consistently for the reporters that have any 343 data at all. PH/VN have nothing. |
+| **Iran (IRN)** | Mostly absent — sanctions effect, most counterparties don't report Iranian crude / refined-petroleum trade. Only present for CN, IN, ID (totals) and sporadic SITC 334 cases. |
+| **Bahrain crude (SITC 333)** | Sparse — most reporters don't break BHR out separately. |
+
+**Per-SITC ship-ability:**
+- **SITC 3** (mineral fuels chapter): 9/10 reporters, good ME-partner
+  coverage → ship-able as a single annual snapshot.
+- **SITC 333** (crude): only the major crude importers (CN, IN, JP,
+  KR, TW, TH) have meaningful coverage; PH/VN don't import crude.
+- **SITC 334** (refined petroleum): most reporters; IR mostly missing.
+- **SITC 343** (natural gas): only CN/IN/JP/KR/TW/TH meaningful; the
+  ASEAN gas exporters (ID/MY/PH/VN) have nothing.
+
+### Decision — TABLED
+
+We considered shipping a partial-coverage version (per-SITC card scoped
+to reporters with reliable data + a "data limitations" note for
+Vietnam 2024 / SITC 343 / Iran). Rejected because:
+
+- The dashboard's overall framing is **monthly live monitoring**.
+  An annual snapshot ending December 2024 would read as "old data" in
+  context, even if labelled clearly.
+- The cross-country comparison story breaks down with different
+  reporter sets per SITC card (no consistent "10 economies" line-up).
+- Gas (SITC 343), arguably the most policy-relevant ME-dependence
+  story given Qatar's role, is the most data-incomplete SITC.
+
+### To resume
+
+1. **Wait for Comtrade 2025** to publish for at least 8/10 reporters.
+   Estimated mid-to-late 2026.
+2. Add `"2025"` (and probably `"2026"` annual once available) to
+   `COMTRADE_DEP_YEARS` in `update_data.py`. Re-run ingest with
+   `only_stale=True` — should be quick (just the new partitions).
+3. **Re-audit Vietnam 2024 + 2025** before resuming. If still missing,
+   either shrink the reporter set to 9 or accept VN as "no data" in
+   the chart.
+4. Build `compute_regional_fuel_share_from_me(conn)` in
+   `derived_series.py` — sums rows for `partner_iso3 IN
+   ('ARE','SAU','QAT','IRQ','KWT','BHR')` divided by the W00 row
+   per (reporter, year, SITC). Emits
+   `regional_{sitc}_share_from_me_<iso2>` series.
+5. Add a 3rd view ("Middle East exposure") to the existing
+   view-selector on `regional` → `trade`. Same `country_share_comparison`
+   shape as the SG views; consider an additional stacked-by-ME-supplier
+   card to show *which* ME partner dominates each reporter's exposure.
 
 ---
 
