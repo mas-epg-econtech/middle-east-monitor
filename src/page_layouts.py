@@ -418,10 +418,10 @@ PAGES = {
                                     },
                                     {
                                         "type":        "partner_share_dual_axis",
-                                        "title":       "Crude petroleum oils",
+                                        "title":       "Crude petroleum oil",
                                         "description": "SITC 333 — unrefined crude oil, feedstock for Singapore's Jurong Island refineries (processed into gasoline, diesel, jet fuel, naphtha).",
                                         "sitc_code":   "SITC_333",
-                                        "sitc_label":  "Crude Petroleum Oils",
+                                        "sitc_label":  "Crude Petroleum Oil",
                                         "slug":        "trade_pshare_sitc333",
                                     },
                                     {

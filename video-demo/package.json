@@ -1,0 +1,22 @@
+{
+  "name": "me-monitor-video-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Remotion video showcasing the Middle East Monitor dashboard project",
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion render MiddleEastMonitorDemo out/me-monitor-demo.mp4",
+    "upgrade": "remotion upgrade"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "typescript": "5.5.4"
+  }
+}
