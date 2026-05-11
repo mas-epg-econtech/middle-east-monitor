@@ -41,3 +41,7 @@ logs/
 .env
 .env.local
 *.token
+
+# Local-only showcase prep — kept on disk, not tracked
+SHOWCASE_WALKTHROUGH.md
+ME_Monitor_Showcase_Transcript.docx
