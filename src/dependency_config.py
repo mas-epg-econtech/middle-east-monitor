@@ -68,10 +68,10 @@ DEPENDENCY_NODES = {
     # prompt physical-market tightness. Spread is already pre-computed
     # in the "Upstream Commodities" tab of the Google Sheet.
     "brent_dated_front_spread": node(
-        label="Dated Brent − front-month spread",
+        label="Dated Brent spread",
         description=(
-            "Premium of Dated Brent over the front-month ICE Brent futures "
-            "contract. Positive = prompt physical-market tightness."
+            "Premium of Dated Brent (physical North Sea benchmark) over the "
+            "front-month ICE Brent futures contract."
         ),
         google_sheet_series=[
             "Spread between Dated Brent and front-month ICE Brent futures contract",
@@ -83,11 +83,10 @@ DEPENDENCY_NODES = {
     # shipping/insurance; a narrow discount to Brent/Dubai signals
     # resilient demand despite sanctions.
     "urals_vs_benchmarks": node(
-        label="Urals crude vs benchmarks and price caps",
+        label="Urals crude vs benchmarks",
         description=(
-            "Urals vs Brent and Dubai with the G7/EU and US price caps "
-            "overlaid (dashed). Urals above the caps with a narrow "
-            "benchmark discount = resilient demand for Russian barrels."
+            "Urals crude alongside Dated Brent and Dubai benchmarks, with the "
+            "G7/EU and US price caps shown as dashed reference lines."
         ),
         google_sheet_series=[
             "Crude Oil Dated Brent FOB NWE",

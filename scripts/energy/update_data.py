@@ -312,9 +312,33 @@ GSHEETS_UNIT_CONVERSIONS = [
     ("US Gulf Ethylene", "USD/pound", "USD/metric tonne", 2204.62),
 ]
 
+# Unit-string normalization (no value conversion — just canonicalize the
+# unit label so charts that combine multiple series don't auto-split by
+# trivial casing/spelling differences. Applied AFTER the conversions
+# above. Each entry maps any unit string whose lowercased+trimmed form
+# matches one of the `aliases` to the canonical form.
+GSHEETS_UNIT_ALIASES: list[tuple[str, tuple[str, ...]]] = [
+    ("USD/barrel", ("usd/barrel", "usd / barrel", "usd/bbl", "$/barrel", "$/bbl", "usd per barrel")),
+    ("USD/metric tonne", ("usd/metric tonne", "usd/metric ton", "usd/mt", "$/mt")),
+]
+
+
+def _canonical_unit(raw: str) -> str:
+    """Return the canonical unit string for a raw unit value, or the input
+    trimmed if no alias matches. Case- and whitespace-insensitive match."""
+    key = (raw or "").strip().lower()
+    if not key:
+        return raw
+    for canonical, aliases in GSHEETS_UNIT_ALIASES:
+        if key in aliases:
+            return canonical
+    return raw.strip()
+
 
 def _apply_gsheets_unit_conversions(frames: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
-    """Convert known series that arrive in non-standard units."""
+    """Convert known series that arrive in non-standard units, then
+    canonicalize unit strings so trivial casing/spelling differences
+    don't cause downstream charts to auto-split by unit."""
     for sid, df in frames.items():
         for name_substr, from_unit, to_unit, multiplier in GSHEETS_UNIT_CONVERSIONS:
             if (
@@ -327,6 +351,37 @@ def _apply_gsheets_unit_conversions(frames: dict[str, pd.DataFrame]) -> dict[str
                 frames[sid] = df
                 print(f"    CONV   {df['series_name'].iloc[0]}: {from_unit} -> {to_unit} (×{multiplier})")
                 break
+
+    # Canonicalize unit strings on a copy of each frame.
+    for sid, df in list(frames.items()):
+        raw_unit = (df["unit"].iloc[0] if not df.empty else "") or ""
+        canonical = _canonical_unit(raw_unit)
+        if canonical != raw_unit:
+            df = df.copy()
+            df["unit"] = canonical
+            frames[sid] = df
+
+    # Force-set USD/barrel for series whose sheet cells may leave the unit
+    # blank or use a non-standard label. These are dollar-per-barrel by
+    # definition and share a chart with the crude benchmarks; a unit
+    # mismatch would split the chart into multiple cards.
+    USD_BARREL_NAME_SUBSTRS = (
+        "price cap",
+        "urals crude oil",
+        "crude oil dated brent fob nwe",
+        "generic 1st crude oil",
+        "gx crude oil dubai fob",
+    )
+    for sid, df in list(frames.items()):
+        if df.empty:
+            continue
+        name = (df["series_name"].iloc[0] or "").lower()
+        if any(sub in name for sub in USD_BARREL_NAME_SUBSTRS):
+            if (df["unit"].iloc[0] or "").strip() != "USD/barrel":
+                df = df.copy()
+                df["unit"] = "USD/barrel"
+                frames[sid] = df
+
     return frames
 
 
