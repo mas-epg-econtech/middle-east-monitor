@@ -331,11 +331,14 @@ def incremental_update(service_url, csv_path, label, min_rows_full):
 
     print(f"\n  Existing data through: {max_date.strftime('%Y-%m-%d')}")
 
-    # Query for records strictly after the max date
-    # Use SQL date string format (epoch-ms doesn't work with all ArcGIS services)
+    # Query for records strictly after the max date.
+    # ArcGIS Feature Services with esriFieldTypeDate columns need the
+    # SQL DATE keyword to interpret the literal as a date; a bare
+    # quoted string ('YYYY-MM-DD') is compared as text and silently
+    # matches zero rows.
     after_date = max_date + timedelta(days=1)
     after_str = after_date.strftime('%Y-%m-%d')
-    where = f"date >= '{after_str}'"
+    where = f"date >= DATE '{after_str}'"
 
     print(f"  Querying for records from {after_str} onwards...")
 
