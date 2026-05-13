@@ -923,6 +923,15 @@ SERIES_DESCRIPTIONS: dict[str, dict[str, str]] = {
     # Singapore Financial Markets — Bloomberg-sourced gsheets series
     # (added 2026-04-30 from new "SG Financial Markets" tab).
     # ────────────────────────────────────────────────────────────────────
+    # ── Upstream Commodities tab (Bloomberg) — Brent / Urals / Dubai + price caps
+    "gsheets_crude_oil_dated_brent_fob_nwe":      {"name": "Dated Brent",          "desc": "Crude Oil Dated Brent FOB NWE — physical North Sea benchmark for prompt cargoes (USD/barrel, daily, Bloomberg)."},
+    "gsheets_generic_1st_crude_oil_brent_ice":    {"name": "Brent (front-month)",  "desc": "Generic 1st Crude Oil, Brent (ICE) — front-month ICE Brent futures contract (USD/barrel, daily, Bloomberg)."},
+    "gsheets_gx_crude_oil_dubai_fob_partial_cargoes_month": {"name": "Dubai crude", "desc": "GX Crude Oil Dubai FOB Partial Cargoes Month — Asian crude benchmark (USD/barrel, daily, Bloomberg)."},
+    "gsheets_spread_between_dated_brent_and_front_month_ice_brent_fu": {"name": "Dated Brent − front-month spread", "desc": "Premium of Dated Brent over the front-month ICE Brent futures contract (USD/barrel, daily, Bloomberg). Positive spread = prompt physical-market tightness."},
+    "gsheets_urals_crude_oil":                    {"name": "Urals crude",          "desc": "Urals Crude Oil — Russian benchmark blend (USD/barrel, daily, Bloomberg). Trading above the G7/EU price cap signals access to non-Western shipping/insurance."},
+    "gsheets_us_price_cap":                       {"name": "US price cap",         "desc": "US-imposed price cap on Russian seaborne crude oil under the G7 framework ($60/barrel reference). Western shipping/insurance may service Russian cargoes only at or below this level."},
+    "gsheets_eu_uk_price_cap":                    {"name": "EU/UK price cap",      "desc": "EU and UK price cap on Russian seaborne crude oil — revised lower than the original G7 cap in 2025 ($44.10/barrel reference). Western shipping/insurance may service Russian cargoes only at or below this level."},
+
     "gsheets_s_pore_domestic_ib_avg_o_n":      {"name": "Domestic interbank overnight",  "desc": "Singapore domestic interbank average overnight rate (Rate, daily, Bloomberg)."},
     "gsheets_sgd_singapore_govt_bval_2y":      {"name": "BVAL 2Y",                 "desc": "Bloomberg Valuation 2-year SGS yield, % per annum, daily."},
     "gsheets_sgd_singapore_govt_bval_10y":     {"name": "BVAL 10Y",                "desc": "Bloomberg Valuation 10-year SGS yield, % per annum, daily."},

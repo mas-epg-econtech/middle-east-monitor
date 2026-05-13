@@ -218,7 +218,7 @@ def fetch_ceic_series() -> dict[str, pd.DataFrame]:
 import re
 
 SHEET_PRICE_TABS = ("Refined Product Prices", "Industrial Input Prices",
-                    "SG Financial Markets")
+                    "SG Financial Markets", "Upstream Commodities")
 NAME_ROW_INDEX = 0
 UNIT_ROW_INDEX = 1
 FREQ_ROW_INDEX = 2

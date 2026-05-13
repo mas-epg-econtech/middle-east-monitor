@@ -149,6 +149,20 @@ PAGES = {
                             },
                             {
                                 "type": "chart_grid",
+                                "title": "Oil market microstructure signals",
+                                "description": (
+                                    "Two specialised signals beyond the headline price level. "
+                                    "Left: the Dated Brent minus front-month futures spread gauges "
+                                    "prompt physical-market tightness — a positive premium means "
+                                    "buyers are paying up for immediate cargo. Right: Urals crude "
+                                    "vs Brent/Dubai with the G7/EU price caps overlaid — Urals "
+                                    "trading above the cap with a narrow benchmark discount "
+                                    "signals resilient demand for Russian barrels despite sanctions."
+                                ),
+                                "nodes": ["brent_dated_front_spread", "urals_vs_benchmarks"],
+                            },
+                            {
+                                "type": "chart_grid",
                                 "title": "Refined products",
                                 "description": (
                                     "Spot prices for refined fuels — marine bunker, jet fuel, "

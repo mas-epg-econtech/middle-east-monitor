@@ -560,23 +560,26 @@ def build_chart_config(title: str, series_list: list[dict],
             }
         else:
             data_points = [{"x": d, "y": v} for d, v in s["data"]]
-            # Detect "Counterfactual"-style series by friendly_name and apply
-            # the shipping-nowcast country-chart convention: blue solid line
-            # (no area fill) + amber dashed counterfactual.
+            # Detect "reference-line"-style series by friendly_name and apply
+            # dashed styling: shipping-nowcast counterfactuals, plus policy
+            # reference lines like the US / EU-UK price caps that should
+            # render as horizontal references rather than as price series.
             fname_check = (s.get("friendly_name") or "").lower()
             is_counterfactual = "counterfactual" in fname_check
+            is_price_cap = "price cap" in fname_check
+            is_reference_line = is_counterfactual or is_price_cap
             is_nowcast_actual = (s.get("friendly_name") or "").strip() == "Actual"
             ds = {
                 "label": label,
                 "data": data_points,
                 "borderColor": color,
                 "backgroundColor": (color + "20"),
-                "borderWidth": 1.5 if (is_counterfactual or is_nowcast_actual) else 1.6,
+                "borderWidth": 1.5 if (is_reference_line or is_nowcast_actual) else 1.6,
                 "pointRadius": 0,
-                "tension": 0 if (is_counterfactual or is_nowcast_actual) else 0.18,
+                "tension": 0 if (is_reference_line or is_nowcast_actual) else 0.18,
                 "spanGaps": True,
                 "fill": False,
-                **({"borderDash": [5, 3]} if is_counterfactual else {}),
+                **({"borderDash": [5, 3]} if is_reference_line else {}),
             }
         datasets.append(ds)
 
