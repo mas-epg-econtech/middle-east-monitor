@@ -1906,14 +1906,23 @@ def _evaluate_narrative_triggers(*, forced: bool):
 # Shipping pipeline helper
 # ---------------------------------------------------------------------------
 def _csv_max_date(csv_path: Path, date_col: str = "date") -> str | None:
-    """Return the max value in `date_col` across the CSV, or None if the
-    file doesn't exist or the column is missing. Used to detect whether
-    an incremental PortWatch download brought new rows."""
+    """Return the max value in `date_col` across the CSV (as 'YYYY-MM-DD'),
+    or None if the file doesn't exist or the column is missing. Used to
+    detect whether an incremental PortWatch download brought new rows.
+
+    PortWatch CSVs accumulate rows in mixed formats over time (legacy rows
+    use 'YYYY/MM/DD HH:MM:SS+00', incremental appends use 'YYYY/MM/DD' or
+    'YYYY-MM-DD'). Naive string-compare picks the wrong row when formats
+    mix (e.g. 'YYYY/MM/DD HH:..' sorts higher than 'YYYY/MM/DD' for the
+    same date, and the legacy format can sort higher than a later bare
+    date if the day part differs). We parse each cell into a datetime
+    before comparing so format heterogeneity can't fool the comparison."""
     if not csv_path.exists():
         return None
     try:
         import csv as _csv
-        max_date = ""
+        from datetime import datetime
+        max_dt = None
         with csv_path.open("r", encoding="utf-8-sig") as f:
             reader = _csv.DictReader(f)
             if not reader.fieldnames:
@@ -1929,9 +1938,30 @@ def _csv_max_date(csv_path: Path, date_col: str = "date") -> str | None:
                 col = reader.fieldnames[0]
             for row in reader:
                 v = (row.get(col) or "").strip()
-                if v and v > max_date:
-                    max_date = v
-        return max_date or None
+                if not v:
+                    continue
+                dt = None
+                try:
+                    if " " in v:
+                        # 'YYYY/MM/DD HH:MM:SS+00' or 'YYYY-MM-DD HH:MM:SS+00'
+                        head = v.split("+")[0].strip()
+                        for fmt in ("%Y/%m/%d %H:%M:%S", "%Y-%m-%d %H:%M:%S"):
+                            try:
+                                dt = datetime.strptime(head, fmt)
+                                break
+                            except ValueError:
+                                continue
+                    elif "-" in v:
+                        dt = datetime.strptime(v, "%Y-%m-%d")
+                    else:
+                        dt = datetime.strptime(v, "%Y/%m/%d")
+                except ValueError:
+                    continue
+                if dt is None:
+                    continue
+                if max_dt is None or dt > max_dt:
+                    max_dt = dt
+        return max_dt.strftime("%Y-%m-%d") if max_dt else None
     except Exception:
         # Best-effort — caller treats None as "couldn't read", which forces
         # a nowcast recompute (safe default).
