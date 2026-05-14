@@ -62,6 +62,91 @@ def _drop_incomplete_trailing_weeks(daily_series, weekly_series, min_days=5):
     return weekly_series
 
 
+# List of result-dict keys that hold per-date arrays which need to be
+# kept in lock-step when we trim a series. Anything not in this list
+# (scalars like 'pre_crisis_avg', metadata like 'chokepoint', dicts like
+# 'variance_decomp') is left alone.
+_DATE_ALIGNED_KEYS = (
+    "dates",
+    "actual",
+    "trend",
+    "seasonal",
+    "remainder",
+    "counterfactual_primary",
+    "counterfactual_sensitivity",
+    "counterfactual_hybrid",
+    "counterfactual_arima",
+    "deviation_primary",
+    "deviation_sensitivity",
+)
+
+
+def _harmonize_trailing_dates(results):
+    """Trim every series in `results` so they all end on the same date.
+
+    Different aggregation tiers (chokepoint vs port-aggregated country/region)
+    drop incomplete trailing weeks based on different daily-data feeds with
+    different freshness lag. The dashboard renders charts on a shared x-axis
+    that's typically driven by the longest series, so any series ending one
+    week earlier than the global max gets a phantom zero plotted at the
+    global max date. Visually misleading.
+
+    Pick the smallest "max date" that appears across all series with at least
+    one date entry, then truncate every series's date-aligned arrays to end
+    on or before that cutoff.
+
+    Returns the modified results dict (also mutates in place).
+    """
+    if not isinstance(results, dict) or not results:
+        return results
+
+    # Collect each series's last date (skip non-dict entries and series with
+    # no 'dates' field — e.g. some aggregator outputs may be summary scalars).
+    last_dates = []
+    for k, s in results.items():
+        if not isinstance(s, dict):
+            continue
+        dates = s.get("dates")
+        if isinstance(dates, list) and dates:
+            last_dates.append(dates[-1])
+
+    if not last_dates:
+        return results
+
+    # The cutoff is the smallest max-date — i.e. the date up to which EVERY
+    # series has a value. (Sorting strings works because dates are 'YYYY-MM-DD'
+    # which is lex-equivalent to chronological.)
+    cutoff = min(last_dates)
+    pre_max = max(last_dates)
+    if cutoff == pre_max:
+        # Nothing to do — all series already share the same end date.
+        print(f"  Date harmonization: all series already end at {cutoff}, no trim needed.")
+        return results
+
+    print(f"  Date harmonization: trimming {pre_max} → {cutoff} so all series share an end date.")
+
+    trimmed = 0
+    for k, s in results.items():
+        if not isinstance(s, dict):
+            continue
+        dates = s.get("dates")
+        if not isinstance(dates, list) or not dates:
+            continue
+        # How many entries to keep? All entries with date <= cutoff.
+        # (dates are sorted ascending in every series produced by this pipeline.)
+        n_keep = sum(1 for d in dates if d <= cutoff)
+        if n_keep == len(dates):
+            continue  # already <= cutoff
+        for key in _DATE_ALIGNED_KEYS:
+            arr = s.get(key)
+            if isinstance(arr, list) and len(arr) >= n_keep:
+                s[key] = arr[:n_keep]
+        trimmed += 1
+
+    print(f"  Date harmonization: trimmed {trimmed} series to end at {cutoff}.")
+    return results
+
+
 def _resample_weekly_split(daily_series, crisis_date=None, agg="mean"):
     """Resample daily series to weekly (W-MON), splitting cleanly at the crisis date.
 
@@ -1179,6 +1264,18 @@ def run_pipeline(seasonal_param=13):
     print(f"{'─' * 60}")
     results = run_top_ports_global(results, frozen_monthly, frozen_daily, live_daily,
                                     seasonal_param=seasonal_param, chokepoint_remainders=chokepoint_remainders)
+
+    # ─── Harmonize trailing dates across all series ─────────────────────────
+    # Different aggregation levels (chokepoint vs port-level country/region
+    # aggregates) drop incomplete trailing weeks based on their own metric's
+    # daily completeness, which lags differently across feeds (PortWatch's
+    # Daily_Chokepoints_Data is fresher than Daily_Ports_Data). The result
+    # is some series ending at week T while others end at T-1. The dashboard
+    # shares an x-axis across series, so the shorter ones render the missing
+    # week as a phantom zero. Trim everything down to the most-conservative
+    # (smallest) max-date so the visuals are consistent and no series shows
+    # a fake-zero point at its right edge.
+    results = _harmonize_trailing_dates(results)
 
     # ─── Save results ───────────────────────────────────────────────────────
     output_fp = os.path.join(OUTPUT_DIR, f"nowcast_results_s{seasonal_param}.json")
