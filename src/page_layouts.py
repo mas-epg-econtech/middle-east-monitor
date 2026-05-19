@@ -804,6 +804,10 @@ PAGES = {
                                     {
                                         "slug": "at_a_glance",
                                         "label": "At a glance",
+                                        # Heatmaps have their own per-section date selector;
+                                        # suppress the page-wide War period / 1Y / All time
+                                        # bar which would otherwise be a no-op control.
+                                        "hide_date_range": True,
                                         "subsections": [
                                             {
                                                 "type": "heatmap",
