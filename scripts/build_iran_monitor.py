@@ -1573,30 +1573,47 @@ _HEATMAP_SEQ = [0]
 
 
 def _heatmap_color(value: float | None, vmin: float, vmax: float) -> str:
-    """Diverging red-white-green palette centered at 0.
+    """Sequential green → yellow → red palette stretched across [vmin, vmax].
 
-    Positive values (inflation) trend red; negative values (deflation)
-    trend green; near-zero is white. Saturation scales with magnitude
-    against the supplied vmin / vmax envelope (capped at ±1).
+    Mirrors the IED mockup (dash.docx, image1.png) — every cell carries
+    visual weight, no washed-out 'white zone' near zero. The low end of the
+    range is green, the high end is red, and the middle blends through
+    yellow / amber. Values outside [vmin, vmax] saturate to the edge color.
+
+    Color stops (chosen to read well on the dark theme + against white text):
+      0.0 (vmin)  → muted lime / sage green   #5fa56a
+      0.5         → warm amber                 #e6c562
+      1.0 (vmax)  → coral red                  #d96560
     """
     if value is None:
         return "background-color: #1f2940; color: #4d5566;"
-    cap = max(abs(vmin), abs(vmax), 1e-6)
-    t = max(-1.0, min(1.0, value / cap))
-    if t >= 0:
-        # white → red
-        r = 255
-        g = int(255 * (1 - t * 0.78))
-        b = int(255 * (1 - t * 0.82))
+    span = vmax - vmin
+    if span <= 1e-9:
+        t = 0.5
     else:
-        # white → green
-        t = -t
-        r = int(255 * (1 - t * 0.55))
-        g = int(255 * (1 - t * 0.18))
-        b = int(255 * (1 - t * 0.55))
-    # Switch the text color to white once the cell darkens past mid-tone.
-    text = "#0f1a2e" if (r + g + b) > 520 else "#ffffff"
-    return f"background-color: rgb({r},{g},{b}); color: {text};"
+        t = (value - vmin) / span
+    t = max(0.0, min(1.0, t))
+
+    # 3-stop linear interpolation in RGB.
+    stops = (
+        (0.0, (95, 165, 106)),   # green
+        (0.5, (230, 197, 98)),   # amber
+        (1.0, (217, 101, 96)),   # coral red
+    )
+    if t <= 0.5:
+        a, b = stops[0], stops[1]
+    else:
+        a, b = stops[1], stops[2]
+    local_t = (t - a[0]) / (b[0] - a[0]) if (b[0] - a[0]) else 0
+    r = int(round(a[1][0] + (b[1][0] - a[1][0]) * local_t))
+    g = int(round(a[1][1] + (b[1][1] - a[1][1]) * local_t))
+    bl = int(round(a[1][2] + (b[1][2] - a[1][2]) * local_t))
+
+    # Text color: pick the higher-contrast option against this background.
+    # The mockup uses near-black text on every cell (works because none of
+    # the colors are very dark); we do the same.
+    text = "#1a1a1a"
+    return f"background-color: rgb({r},{g},{bl}); color: {text};"
 
 
 def render_heatmap(section: dict, conn) -> str:
@@ -1618,7 +1635,12 @@ def render_heatmap(section: dict, conn) -> str:
     desc = section.get("description", "")
     rows = section.get("rows", [])
     default_window = int(section.get("default_window_months", 16))
-    color_cap = float(section.get("color_cap", 8.0))
+    # color_cap (optional): hard limit on the displayed color range. Without
+    # it, the gradient auto-scales to the 5th/95th percentile of all values
+    # in the table so a few outliers don't compress the rest of the grid
+    # into one indistinct color. If set, the auto-scaled bounds are clipped
+    # to ±color_cap.
+    color_cap = section.get("color_cap")
 
     _HEATMAP_SEQ[0] += 1
     seq = _HEATMAP_SEQ[0]
@@ -1663,6 +1685,27 @@ def render_heatmap(section: dict, conn) -> str:
     default_from = sorted_months[cutoff_idx]
     default_to = latest
 
+    # Compute the color scale's vmin/vmax from the data. Use the 5th/95th
+    # percentile so a single extreme outlier doesn't flatten the rest of the
+    # grid into one indifferent color. Symmetric clip to ±color_cap if the
+    # section sets one.
+    all_vals = sorted(v for _, by_month in series_data for v in by_month.values())
+    if all_vals:
+        n = len(all_vals)
+        p_lo = all_vals[int(n * 0.05)]
+        p_hi = all_vals[min(n - 1, int(n * 0.95))]
+        vmin, vmax = p_lo, p_hi
+        if color_cap is not None:
+            cap = float(color_cap)
+            vmin = max(vmin, -cap)
+            vmax = min(vmax, cap)
+        if vmax - vmin < 0.5:
+            # Tiny range — pad a bit so the gradient has room to breathe.
+            mid = (vmin + vmax) / 2
+            vmin, vmax = mid - 0.5, mid + 0.5
+    else:
+        vmin, vmax = -1.0, 1.0
+
     # Header row: one <th> per month, with a short label like "Jan-25".
     def _label(ym: str) -> str:
         y, m = ym.split("-")
@@ -1681,7 +1724,7 @@ def render_heatmap(section: dict, conn) -> str:
         cells = ""
         for ym in sorted_months:
             v = by_month.get(ym)
-            style = _heatmap_color(v, -color_cap, color_cap)
+            style = _heatmap_color(v, vmin, vmax)
             text = f"{v:+.1f}" if v is not None else "·"
             cells += f'<td data-ym="{ym}" class="hm-cell" style="{style}" title="{country_label} · {ym} · {text}%">{text}</td>'
         body_html += f'<tr><th class="hm-country">{html.escape(country_label)}</th>{cells}</tr>'
