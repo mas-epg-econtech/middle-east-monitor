@@ -812,12 +812,7 @@ PAGES = {
                                             {
                                                 "type": "heatmap",
                                                 "title": "Headline CPI inflation (% YoY)",
-                                                "description": (
-                                                    "Year-on-year headline CPI across 10 Asian economies. "
-                                                    "Cells red where inflation is positive, green where deflation; "
-                                                    "shade scales with magnitude. Default window is the most recent "
-                                                    "16 months — adjust the date selector to extend the range."
-                                                ),
+                                                "description": "Year-on-year headline CPI.",
                                                 "rows": [
                                                     {"label": "China",       "series": "regional_cpi_headline_cn"},
                                                     {"label": "India",       "series": "regional_cpi_headline_in"},
@@ -836,12 +831,7 @@ PAGES = {
                                             {
                                                 "type": "heatmap",
                                                 "title": "Import Price Index (% YoY)",
-                                                "description": (
-                                                    "Year-on-year change in Import Price Indices across 10 Asian "
-                                                    "economies. A leading indicator of imported-input cost pressure; "
-                                                    "wide swings reflect global commodity and exchange-rate moves "
-                                                    "passed through to local importer invoices."
-                                                ),
+                                                "description": "Year-on-year change in Import Price Indices.",
                                                 "rows": [
                                                     {"label": "China",       "series": "regional_imp_pi_yoy_cn"},
                                                     {"label": "India",       "series": "regional_imp_pi_yoy_in"},
@@ -860,12 +850,7 @@ PAGES = {
                                             {
                                                 "type": "heatmap",
                                                 "title": "Producer Price Index (% YoY)",
-                                                "description": (
-                                                    "Year-on-year change in Producer Price Indices across 10 Asian "
-                                                    "economies. Captures factory-gate price pressure — a step "
-                                                    "downstream from imported inputs and upstream from headline CPI. "
-                                                    "Persistent positive prints flag building cost-push inflation."
-                                                ),
+                                                "description": "Year-on-year change in Producer Price Indices.",
                                                 "rows": [
                                                     {"label": "China",       "series": "regional_ppi_yoy_cn"},
                                                     {"label": "India",       "series": "regional_ppi_yoy_in"},
