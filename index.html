@@ -1214,7 +1214,7 @@
   </div>
 
   <footer>
-    <span>Middle East Monitor &middot; data refreshed 2026-05-19 22:30 UTC &middot; narratives generated 2026-05-19 09:28 UTC &middot; built by MAS-EPG-EconTech</span>
+    <span>Middle East Monitor &middot; data refreshed 2026-05-20 07:28 UTC &middot; narratives generated 2026-05-19 09:28 UTC &middot; built by MAS-EPG-EconTech</span>
     <span>Sources: CEIC, SingStat, Motorist, DataGov, Bloomberg/GSheets, Yahoo Finance, ADB AsianBondsOnline, Investing.com, IMF PortWatch</span>
   </footer>
 
@@ -1264,6 +1264,46 @@
     document.addEventListener('click', (e) => {
       const modal = document.getElementById('access-warning-modal');
       if (modal && e.target === modal) closeAccessWarning();
+    });
+
+    // ── Heatmap date-range selectors (CSP-safe, delegated) ──
+    // Each .heatmap-section has two <input type="month"> (.hm-from / .hm-to)
+    // and a Reset button. Columns + cells carry data-ym="YYYY-MM"; we toggle
+    // their display based on whether the month falls inside [from, to].
+    // Handlers are delegated off document so they survive the csp_transform
+    // (which only extracts this one inline script block — per-heatmap inline
+    // scripts would be CSP-blocked on Airbase).
+    function applyHeatmap(section) {
+      const from = section.querySelector('.hm-from');
+      const to = section.querySelector('.hm-to');
+      const table = section.querySelector('.hm-table');
+      if (!from || !to || !table) return;
+      const lo = from.value, hi = to.value;
+      table.querySelectorAll('[data-ym]').forEach(function(el) {
+        const ym = el.getAttribute('data-ym');
+        el.style.display = (ym >= lo && ym <= hi) ? '' : 'none';
+      });
+    }
+    function initHeatmaps() {
+      document.querySelectorAll('.heatmap-section').forEach(applyHeatmap);
+    }
+    document.addEventListener('change', function(e) {
+      const t = e.target;
+      if (t && t.classList && t.classList.contains('hm-date-input')) {
+        const section = t.closest('.heatmap-section');
+        if (section) applyHeatmap(section);
+      }
+    });
+    document.addEventListener('click', function(e) {
+      const t = e.target;
+      if (t && t.classList && t.classList.contains('hm-reset')) {
+        const section = t.closest('.heatmap-section');
+        if (!section) return;
+        section.querySelectorAll('.hm-date-input').forEach(function(inp) {
+          inp.value = inp.getAttribute('data-hm-default');
+        });
+        applyHeatmap(section);
+      }
     });
 
     // ── Tab switching ──
@@ -1618,6 +1658,9 @@
         // No tabs on this page — show all rows and total count
         filterDataSourcesByTab(null);
       }
+
+      // Apply each heatmap's default date window (column show/hide).
+      initHeatmaps();
 
       // ── Chart-ID badge: click to copy URL fragment to clipboard ──
       // Each card surfaces its deterministic ID (e.g. ⌗ sg.activity.petroleum_refining)
