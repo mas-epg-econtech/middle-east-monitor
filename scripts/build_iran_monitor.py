@@ -1738,46 +1738,26 @@ def render_heatmap(section: dict, conn) -> str:
 
     desc_html = f'<p class="section-desc">{html.escape(desc)}</p>' if desc else ""
 
-    # Date-range selector + JS that toggles column visibility. The script is
-    # self-contained per heatmap (scoped via id_prefix).
+    # Date-range selector. NO inline <script> — Airbase's CSP bans inline
+    # scripts (csp_transform.py only extracts the single main dashboard
+    # block). Instead the inputs/button carry classes + data-* attributes,
+    # and a delegated handler in the main dashboard JS (initHeatmaps /
+    # the document-level change+click listeners) drives column show/hide.
+    # The default window is stored in data-hm-default so Reset can restore
+    # it without the server needing to round-trip.
     selector = f'''
       <div class="hm-controls">
         <label for="{id_prefix}-from">From</label>
-        <input type="month" id="{id_prefix}-from" value="{default_from}"
+        <input type="month" id="{id_prefix}-from" class="hm-date-input hm-from"
+               value="{default_from}" data-hm-default="{default_from}"
                min="{sorted_months[0]}" max="{latest}">
         <label for="{id_prefix}-to">To</label>
-        <input type="month" id="{id_prefix}-to" value="{default_to}"
+        <input type="month" id="{id_prefix}-to" class="hm-date-input hm-to"
+               value="{default_to}" data-hm-default="{default_to}"
                min="{sorted_months[0]}" max="{latest}">
-        <button type="button" class="hm-reset" id="{id_prefix}-reset">Reset</button>
+        <button type="button" class="hm-reset">Reset</button>
       </div>'''
-
-    # The JS picks any <th data-ym> or <td data-ym> inside the heatmap and
-    # toggles display based on whether its YYYY-MM falls inside the inputs.
-    inline_js = f'''
-      <script>
-      (function() {{
-        var root = document.getElementById('{id_prefix}-table');
-        var fromI = document.getElementById('{id_prefix}-from');
-        var toI = document.getElementById('{id_prefix}-to');
-        var reset = document.getElementById('{id_prefix}-reset');
-        function apply() {{
-          var lo = fromI.value;
-          var hi = toI.value;
-          root.querySelectorAll('[data-ym]').forEach(function(el) {{
-            var ym = el.getAttribute('data-ym');
-            el.style.display = (ym >= lo && ym <= hi) ? '' : 'none';
-          }});
-        }}
-        fromI.addEventListener('change', apply);
-        toI.addEventListener('change', apply);
-        reset.addEventListener('click', function() {{
-          fromI.value = '{default_from}';
-          toI.value = '{default_to}';
-          apply();
-        }});
-        apply();
-      }})();
-      </script>'''
+    inline_js = ""  # CSP-safe: heatmap behaviour lives in the main dashboard JS.
 
     return f'''
     <section class="page-section heatmap-section">
@@ -4391,6 +4371,46 @@ BASE_TEMPLATE = '''<!DOCTYPE html>
       if (modal && e.target === modal) closeAccessWarning();
     }});
 
+    // ── Heatmap date-range selectors (CSP-safe, delegated) ──
+    // Each .heatmap-section has two <input type="month"> (.hm-from / .hm-to)
+    // and a Reset button. Columns + cells carry data-ym="YYYY-MM"; we toggle
+    // their display based on whether the month falls inside [from, to].
+    // Handlers are delegated off document so they survive the csp_transform
+    // (which only extracts this one inline script block — per-heatmap inline
+    // scripts would be CSP-blocked on Airbase).
+    function applyHeatmap(section) {{
+      const from = section.querySelector('.hm-from');
+      const to = section.querySelector('.hm-to');
+      const table = section.querySelector('.hm-table');
+      if (!from || !to || !table) return;
+      const lo = from.value, hi = to.value;
+      table.querySelectorAll('[data-ym]').forEach(function(el) {{
+        const ym = el.getAttribute('data-ym');
+        el.style.display = (ym >= lo && ym <= hi) ? '' : 'none';
+      }});
+    }}
+    function initHeatmaps() {{
+      document.querySelectorAll('.heatmap-section').forEach(applyHeatmap);
+    }}
+    document.addEventListener('change', function(e) {{
+      const t = e.target;
+      if (t && t.classList && t.classList.contains('hm-date-input')) {{
+        const section = t.closest('.heatmap-section');
+        if (section) applyHeatmap(section);
+      }}
+    }});
+    document.addEventListener('click', function(e) {{
+      const t = e.target;
+      if (t && t.classList && t.classList.contains('hm-reset')) {{
+        const section = t.closest('.heatmap-section');
+        if (!section) return;
+        section.querySelectorAll('.hm-date-input').forEach(function(inp) {{
+          inp.value = inp.getAttribute('data-hm-default');
+        }});
+        applyHeatmap(section);
+      }}
+    }});
+
     // ── Tab switching ──
     function switchTab(btn, slug) {{
       const group = btn.closest('.page-section');
@@ -4743,6 +4763,9 @@ BASE_TEMPLATE = '''<!DOCTYPE html>
         // No tabs on this page — show all rows and total count
         filterDataSourcesByTab(null);
       }}
+
+      // Apply each heatmap's default date window (column show/hide).
+      initHeatmaps();
 
       // ── Chart-ID badge: click to copy URL fragment to clipboard ──
       // Each card surfaces its deterministic ID (e.g. ⌗ sg.activity.petroleum_refining)
