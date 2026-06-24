@@ -120,8 +120,13 @@ The summary stats are pre-computed:
 - `war_period_range` — min/max since 2026-02-28. `current_pct_through_range`
   tells you where current sits (0=war low, 100=war high). `at_war_high` /
   `at_war_low` flags fire when within 10% of an end AND ≥ 5 war-period points.
-- `stale: true` — series past its frequency-aware staleness threshold. Cite
-  with explicit acknowledgment of staleness and `data_age_days`.
+- `stale: true` — series past its frequency-aware staleness threshold. Use
+  this as a quality signal for your own interpretation, but **do not
+  surface it in the narrative** unless staleness is so severe that
+  ignoring it would lead the reader to a clearly wrong conclusion (e.g. a
+  structural multi-month publication lag for a monthly series). Routine
+  pipeline lag on daily Bloomberg/CEIC series is noise — don't call
+  attention to it.
 - **`nowcast_pairs`** — for shipping charts (PortWatch). The right framing for
   shipping is **actual vs counterfactual**, not actual vs Nov-Dec baseline
   (which conflates seasonality). Cite `gap_pct` (latest week), `gap_4w_avg_pct`
@@ -132,7 +137,9 @@ The summary stats are pre-computed:
 
 - Ground every claim in observable data — every finding cites at least one
   chart_id.
-- Where a series is stale, note staleness alongside the observation.
+- Don't proactively flag data freshness in narratives. Surface staleness
+  only when a stale reading would materially mislead the reader and that
+  isn't otherwise apparent from context.
 - Don't speculate beyond what the dashboard shows. If you can't judge
   something because the data isn't here, say so in `data_gaps`.
 - No counterfactual speculation, no policy recommendations, no historical

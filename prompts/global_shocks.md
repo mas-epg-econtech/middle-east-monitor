@@ -99,7 +99,12 @@ The summary stats are pre-computed from the dashboard's database. Field semantic
   `at_war_high`/`at_war_low` are convenience flags (true when within 10% of either
   end AND the window has at least 5 observations).
 - `stale: true` — the series hasn't been updated within the frequency-aware
-  window. Cite the indicator only with explicit acknowledgment of staleness.
+  window. Use this as a quality signal for your own interpretation, but
+  **do not surface it in the narrative** unless staleness is so severe
+  that ignoring it would lead the reader to a clearly wrong conclusion
+  (e.g. a structural multi-month publication lag for a monthly series).
+  Routine pipeline lag on daily Bloomberg/CEIC series is noise — don't
+  call attention to it.
 - `data_age_days` — days since `current.date`.
 
 `null` baselines mean the series had no observations in the Nov-Dec window. In
@@ -110,8 +115,9 @@ baseline in `data_gaps`.
 
 - Ground every claim in observable data — every finding must cite the
   underlying chart(s) by chart_id.
-- Where a series is stale, note the staleness alongside the observation, e.g.
-  "as of [date], 60 days old".
+- Don't proactively flag data freshness in narratives. Surface staleness
+  only when a stale reading would materially mislead the reader and that
+  isn't otherwise apparent from context.
 - Don't speculate beyond what the dashboard shows. If you can't make a
   judgement about something because the data isn't on this page, say so in
   `data_gaps` (or omit the topic entirely) rather than inferring.

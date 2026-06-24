@@ -140,7 +140,12 @@ The summary stats are pre-computed:
 - `trend_4w` / `trend_12w` — momentum, in pp or pct.
 - `war_period_range` — min/max since 2026-02-28. `current_pct_through_range`
   + `at_war_high`/`at_war_low` flags.
-- `stale: true` — note staleness and `data_age_days` when citing.
+- `stale: true` — use this as a quality signal for your own
+  interpretation, but **do not surface it in the narrative** unless
+  staleness is so severe that ignoring it would lead the reader to a
+  clearly wrong conclusion (e.g. a structural multi-month publication
+  lag for a monthly series). Routine pipeline lag on daily Bloomberg /
+  CEIC series is noise — don't call attention to it.
 - **`nowcast_pairs`** — for regional shipping charts. The right framing is
   actual vs counterfactual (`gap_pct`, `gap_4w_avg_pct`, `war_max_gap_pct`),
   NOT actual vs Nov-Dec baseline.
@@ -149,8 +154,10 @@ The summary stats are pre-computed:
 
 - Ground every claim in observable data — every finding cites at least one
   chart_id.
-- Where a series is stale (Indonesia Industrial Production, Vietnam 2024
-  Comtrade, etc.), note the staleness alongside the observation.
+- Don't proactively flag data freshness in narratives. Surface staleness
+  only when a stale reading would materially mislead the reader and that
+  isn't otherwise apparent from context (e.g. Vietnam 2024 Comtrade with
+  zero entries is genuinely worth flagging in `data_gaps`).
 - Don't speculate beyond what the dashboard shows.
 - No counterfactual speculation, no policy recommendations, no historical
   comparisons not visible in the data.

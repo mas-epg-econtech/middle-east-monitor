@@ -237,6 +237,33 @@ no commentary outside the JSON.
       +64% — use "surged", "up sharply", or "two-thirds higher". Same
       logic for any narrative-vs-driver pairing on the same indicator.
 
+    - **Descriptor magnitude calibration.** Qualitative descriptors
+      ("well above", "sharply elevated", "near baseline", "modestly
+      higher", etc.) must match the actual percentage deviation. Use
+      this rough mapping (vs the relevant baseline / pre-conflict
+      reference):
+        * `< ±3%`  → "at" / "near" / "in line with" / "essentially
+          flat against"
+        * `±3-8%`  → "modestly above/below" / "a touch above/below" /
+          "slightly elevated/lower"
+        * `±8-15%` → "moderately above/below" / "noticeably higher/lower"
+        * `±15-30%` → "well above/below" / "sharply higher/lower" /
+          "materially elevated"
+        * `±30%+`  → "dramatically above/below" / "much higher/lower" /
+          "near war-period highs/lows" (cite the level)
+
+      A move from 71.66 to 76.49 (+6.7%) is "modestly above", NOT
+      "well above". Reserve the strongest descriptors for the strongest
+      moves — overcalling small moves desensitises the reader to the
+      ones that actually matter.
+
+    - **"Pre-conflict" vs "baseline" — be precise.** The summary stats'
+      `baseline` field is the Nov-Dec 2025 monthly average — that's the
+      "pre-war baseline" or "pre-conflict average" you should default to
+      when comparing levels. Don't refer vaguely to "pre-conflict
+      levels" when you're really comparing to the Nov-Dec window;
+      either name the window or just say "pre-war baseline".
+
 - **FX phrasing precision** — when describing currency moves, name the
   currency that appreciated/depreciated, not the pair. The pair name
   (e.g. USD/SGD, USD/JPY) is a quote convention, not a subject. Wrong:
@@ -281,8 +308,8 @@ Sections (in this exact order, all 5 always emitted):
    real-side hits: SG wholesale / transport / construction / F&B +
    regional IPI. Use "no notable downstream impact" if these sectors
    are quiet. Example body: "Beyond refining, broader SG sectoral
-   activity is softening modestly while regional manufacturing data
-   are largely too stale to read."
+   activity is softening modestly while regional manufacturing shows
+   only mild divergence."
 
 5. **`Overall`** *(synthesis)* — aggregate read + key vulnerability.
    Example: "Severe upstream price shock with corroborating physical
@@ -371,9 +398,13 @@ line rather than dropping it — the structure must always be 5 sections.
 - **Per-page summaries describe both questions when both apply** — that's
   handled in the per-page outputs you've been given. Your job here is the
   landing-page synthesis only.
-- **Stale data is named, not hidden.** When a key driver depends on a
-  series that's stale or has missing baseline, say so in the narrative
-  (e.g. "...refining IIP, latest March data 60 days old...").
+- **Don't proactively call out data freshness in narratives.** Use stale
+  flags to inform your own judgement, but don't surface routine
+  pipeline lag (e.g. Bloomberg/CEIC daily series running a few days
+  behind) — that's noise to the reader. Only flag staleness when ignoring
+  it would mislead, e.g. a structural multi-month publication lag on a
+  monthly series that's central to your reading. Genuinely missing
+  baselines belong in `data_gaps`, not the narrative.
 
 ## Guardrails
 
